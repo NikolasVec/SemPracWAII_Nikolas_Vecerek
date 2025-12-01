@@ -37,8 +37,9 @@
         </div>
         <!-- Stredná časť: logo -->
         <div class="d-flex justify-content-center flex-grow-1">
-            <a class="navbar-brand mx-auto" href="<?= $link->url('home.index') ?>">
-                <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="<?= App\Configuration::APP_NAME ?>" alt="Framework Logo" style="width: 80px; height: 80px; object-fit: contain;">
+            <a class="navbar-brand mx-auto logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
+                <span class="logo-circle"></span>
+                <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
             </a>
         </div>
         <!-- Pravá časť: login/logout -->
