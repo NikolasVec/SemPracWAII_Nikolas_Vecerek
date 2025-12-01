@@ -3,5 +3,5 @@
 ?>
 
 <h1>
-Hello World!
+<strong>Hello World!</strong>
 </h1>

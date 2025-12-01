@@ -23,30 +23,41 @@
     <script src="<?= $link->asset('js/script.js') ?>"></script>
 </head>
 <body>
-<nav class="navbar navbar-expand-sm bg-light">
-    <div class="container-fluid">
-        <a class="navbar-brand" href="<?= $link->url('home.index') ?>">
-            <img src="<?= $link->asset('images/vaiicko_logo.png') ?>" title="<?= App\Configuration::APP_NAME ?>" alt="Framework Logo">
-        </a>
-        <ul class="navbar-nav me-auto">
-            <li class="nav-item">
-                <a class="nav-link" href="<?= $link->url('home.contact') ?>">Contact</a>
-            </li>
-        </ul>
-        <?php if ($user->isLoggedIn()) { ?>
-            <span class="navbar-text">Logged in user: <b><?= $user->getName() ?></b></span>
-            <ul class="navbar-nav ms-auto">
+
+<!-- Nastavenie navbaru -->
+<nav class="navbar navbar-expand-sm bg-light fixed-top">
+    <div class="container-fluid d-flex align-items-center">
+        <!-- Ľavá časť: menu -->
+        <div class="d-flex flex-grow-1">
+            <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('auth.logout') ?>">Log out</a>
+                    <a class="nav-link" href="<?= $link->url('home.contact') ?>">Contact</a>
                 </li>
             </ul>
-        <?php } else { ?>
-            <ul class="navbar-nav ms-auto">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>">Log in</a>
-                </li>
-            </ul>
-        <?php } ?>
+        </div>
+        <!-- Stredná časť: logo -->
+        <div class="d-flex justify-content-center flex-grow-1">
+            <a class="navbar-brand mx-auto" href="<?= $link->url('home.index') ?>">
+                <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="<?= App\Configuration::APP_NAME ?>" alt="Framework Logo" style="width: 80px; height: 80px; object-fit: contain;">
+            </a>
+        </div>
+        <!-- Pravá časť: login/logout -->
+        <div class="d-flex flex-grow-1 justify-content-end align-items-center">
+            <?php if ($user->isLoggedIn()) { ?>
+                <span class="navbar-text me-2">Logged in user: <b><?= $user->getName() ?></b></span>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= $link->url('auth.logout') ?>">Log out</a>
+                    </li>
+                </ul>
+            <?php } else { ?>
+                <ul class="navbar-nav">
+                    <li class="nav-item">
+                        <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>">Log in</a>
+                    </li>
+                </ul>
+            <?php } ?>
+        </div>
     </div>
 </nav>
 <div class="container-fluid mt-3">
