@@ -25,65 +25,20 @@
 <body>
 
 <!-- Nastavenie navbaru -->
-<nav class="navbar navbar-expand-sm bg-light fixed-top">
-    <div class="container-fluid d-flex align-items-center">
-        <!-- Ľavá časť: menu -->
-        <div class="d-flex flex-grow-1">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('home.contact') ?>">MAPA</a>
-                </li>
-            </ul>
-        </div>
-
-        <div class="d-flex flex-grow-1">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('home.galleryPage') ?>">GALERIA</a>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Stredná časť: logo -->
-        <div class="d-flex justify-content-center flex-grow-1">
-            <a class="navbar-brand mx-auto logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
+<nav class="navbar navbar-expand-sm bg-light fixed-top" style="min-height: 70px;">
+    <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 70px;">
+        <div class="d-flex align-items-center" style="gap: 2rem; margin-left: 1vw;">
+            <!-- Ľavé tlačidlá -->
+            <a class="nav-link px-3" href="<?= $link->url('home.registrationPage') ?>">REGISTRÁCIA</a>
+            <a class="nav-link px-3" href="<?= $link->url('home.galleryPage') ?>">GALERIA</a>
+            <!-- Logo v strede -->
+            <a class="navbar-brand mx-4 logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
                 <span class="logo-circle"></span>
                 <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
             </a>
-        </div>
-
-        <div class="d-flex flex-grow-1">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('home.resultsPage') ?>">VÝSLEDKY</a>
-                </li>
-            </ul>
-        </div>
-
-        <div class="d-flex flex-grow-1">
-            <ul class="navbar-nav">
-                <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('home.registrationPage') ?>">REGISTRÁCIA</a>
-                </li>
-            </ul>
-        </div>
-
-        <!-- Pravá časť: login/logout -->
-        <div class="d-flex flex-grow-1 justify-content-end align-items-center">
-            <?php if ($user->isLoggedIn()) { ?>
-                <span class="navbar-text me-2">Logged in user: <b><?= $user->getName() ?></b></span>
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= $link->url('auth.logout') ?>">Log out</a>
-                    </li>
-                </ul>
-            <?php } else { ?>
-                <ul class="navbar-nav">
-                    <li class="nav-item">
-                        <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>">Log in</a>
-                    </li>
-                </ul>
-            <?php } ?>
+            <!-- Pravé tlačidlá -->
+            <a class="nav-link px-3" href="<?= $link->url('home.contact') ?>">MAPA</a>
+            <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>">VÝHODNOTENIE</a>
         </div>
     </div>
 </nav>
