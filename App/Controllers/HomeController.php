@@ -54,8 +54,15 @@ class HomeController extends BaseController
     {
         return $this->html();
     }
-
-    public function myPage(): Response
+    public function galleryPage(Request $request): Response
+    {
+        return $this->html();
+    }
+    public function registrationPage(Request $request): Response
+    {
+        return $this->html();
+    }
+    public function resultsPage(Request $request): Response
     {
         return $this->html();
     }

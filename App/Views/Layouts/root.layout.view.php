@@ -31,10 +31,19 @@
         <div class="d-flex flex-grow-1">
             <ul class="navbar-nav">
                 <li class="nav-item">
-                    <a class="nav-link" href="<?= $link->url('home.contact') ?>">Contact</a>
+                    <a class="nav-link" href="<?= $link->url('home.contact') ?>">MAPA</a>
                 </li>
             </ul>
         </div>
+
+        <div class="d-flex flex-grow-1">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= $link->url('home.galleryPage') ?>">GALERIA</a>
+                </li>
+            </ul>
+        </div>
+
         <!-- Stredná časť: logo -->
         <div class="d-flex justify-content-center flex-grow-1">
             <a class="navbar-brand mx-auto logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
@@ -42,6 +51,23 @@
                 <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
             </a>
         </div>
+
+        <div class="d-flex flex-grow-1">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= $link->url('home.resultsPage') ?>">VÝSLEDKY</a>
+                </li>
+            </ul>
+        </div>
+
+        <div class="d-flex flex-grow-1">
+            <ul class="navbar-nav">
+                <li class="nav-item">
+                    <a class="nav-link" href="<?= $link->url('home.registrationPage') ?>">REGISTRÁCIA</a>
+                </li>
+            </ul>
+        </div>
+
         <!-- Pravá časť: login/logout -->
         <div class="d-flex flex-grow-1 justify-content-end align-items-center">
             <?php if ($user->isLoggedIn()) { ?>
