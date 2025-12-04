@@ -27,7 +27,7 @@
 <!-- Nastavenie navbaru -->
 <nav class="navbar navbar-expand-sm bg-light fixed-top" style="min-height: 70px;">
     <div class="container-fluid d-flex justify-content-center align-items-center" style="min-height: 70px;">
-        <div class="d-flex align-items-center" style="gap: 2rem; margin-left: 1vw;">
+        <div class="d-flex align-items-center" style="gap: 2rem; margin-left: 7vw;">
             <!-- Ľavé tlačidlá -->
             <a class="nav-link px-3" href="<?= $link->url('home.registrationPage') ?>">REGISTRÁCIA</a>
             <a class="nav-link px-3" href="<?= $link->url('home.galleryPage') ?>">GALERIA</a>
@@ -40,6 +40,16 @@
             <a class="nav-link px-3" href="<?= $link->url('home.contact') ?>">MAPA</a>
             <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>">VÝHODNOTENIE</a>
         </div>
+    </div>
+
+    <!-- Úplne pravý kraj: Log in/Log out -->
+    <div class="d-flex align-items-center ms-3" style="min-width: 90px;">
+        <?php if ($user->isLoggedIn()) { ?>
+            <span class="navbar-text me-2"><?= $user->getName() ?></span>
+            <a class="nav-link" href="<?= $link->url('auth.logout') ?>">Log out</a>
+        <?php } else { ?>
+            <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>">Log in</a>
+        <?php } ?>
     </div>
 </nav>
 <div class="container-fluid mt-3">
