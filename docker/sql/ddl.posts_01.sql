@@ -68,5 +68,16 @@ SET foreign_key_checks = 1;
 
 -- Príklad vloženia údajov
 INSERT INTO `rokKonania` (`ID_roka`,`rok`, `datum_konania`, `pocet_ucastnikov`)
-VALUES (2024,2024, '2024-06-15', 120),
+VALUES (2023,2023, '2024-06-15', 103),
+       (2024,2024, '2024-06-15', 120),
        (2025,2023, '2023-06-10', 110);
+
+INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `ID_roka`)
+VALUES (1, 'Horská chata', 'Nízke Tatry', 'Chata sa nachádza v srdci Nízkych Tatier a ponúka útulné ubytovanie pre bežcov.', 2023),
+       (2, 'Lesný kemp', 'Malá Fatra', 'Kemp je obklopený hustým lesom a poskytuje ideálne miesto na oddych po behu.', 2024),
+       (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', 2025);
+
+INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`, `email`, `heslo`, `ID_roka`)
+VALUES (1, 'Ján', 'Novák', 'novak@gmail.com', 'heslo123', 2023),
+       (2, 'Mária', 'Kováčová', 'kovac@gmial.com', 'tajneheslo', 2024),
+       (3, 'Peter', 'Horváth', 'hornak@gmail.sk', 'bezpecneheslo', 2024);
