@@ -8,6 +8,9 @@
     <div class="row">
         <div class="col">
             <div>
+                <br>
+                <br>
+                <br>
                 Welcome, <strong><?= $user->getName() ?></strong>!<br><br>
                 This part of the application is accessible only after logging in.
             </div>
