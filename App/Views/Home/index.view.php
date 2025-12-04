@@ -7,9 +7,7 @@
     <div class="row">
         <div class="col mt-5">
             <div class="text-center">
-                <h2>Vaííčko MVC FW</h2>
-                <h3>Version <?= App\Configuration::FW_VERSION ?></h3>
-                <img src="<?= $link->asset('images/vaiicko_logo.png') ?>" alt="Framework Logo">
+                <img src="<?= $link->asset('images/BEHPOPIVO_OBR_BEZTEXTU.png') ?>">
                 <p>
                     Congratulations, you have successfully installed and run the framework
                     <strong>Vaííčko</strong> <?= App\Configuration::FW_VERSION ?>!<br>
