@@ -45,3 +45,17 @@
     display: block;
 }
 
+.behpopivo-nadpis {
+    position: absolute;
+    top: 35%; /* moved higher */
+    left: 50%;
+    transform: translate(-50%, -50%);
+    color: #fff;
+    font-size: 12vw; /* made larger */
+    font-weight: bold;
+    text-shadow: 2px 2px 8px #000, 0 0 20px #000;
+    letter-spacing: 0.1em;
+    pointer-events: none;
+    z-index: 2;
+    white-space: nowrap; /* zabezpečí jeden riadok */
+}
