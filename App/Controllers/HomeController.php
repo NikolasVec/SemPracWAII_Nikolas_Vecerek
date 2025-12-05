@@ -60,7 +60,50 @@ class HomeController extends BaseController
     }
     public function registrationPage(Request $request): Response
     {
-        return $this->html();
+        $success = null;
+        $error = null;
+        if ($request->isPost()) {
+            $meno = $request->post('meno');
+            $priezvisko = $request->post('priezvisko');
+            $email = $request->post('email');
+            $pohlavie = $request->post('pohlavie');
+            $rok = date('Y');
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $error = 'Zadaný email nemá správny formát.';
+            } else {
+                try {
+                    $conn = \Framework\DB\Connection::getInstance();
+                    // Zisti ID_roka pre aktuálny rok
+                    $stmt = $conn->prepare('SELECT ID_roka FROM rokKonania WHERE rok = ? LIMIT 1');
+                    $stmt->execute([$rok]);
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $id_roka = $row['ID_roka'];
+                    } else {
+                        // Ak neexistuje, vytvor nový záznam
+                        $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov) VALUES (?, ?, 0)');
+                        $stmt->execute([$rok, date('Y-m-d')]);
+                        $id_roka = $conn->lastInsertId();
+                    }
+                    // Ulož bežca
+                    $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
+                    $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $id_roka]);
+                    // Aktualizuj pocet_ucastnikov v rokKonania
+                    $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
+                    $stmt->execute([$id_roka]);
+                    $pocet = $stmt->fetch()['pocet'];
+                    $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                    $stmt->execute([$pocet, $id_roka]);
+                    $success = 'Registrácia prebehla úspešne!';
+                } catch (\Exception $e) {
+                    $error = 'Chyba pri registrácii: ' . $e->getMessage();
+                }
+            }
+        }
+        return $this->html([
+            'success' => $success,
+            'error' => $error
+        ]);
     }
     public function resultsPage(Request $request): Response
     {

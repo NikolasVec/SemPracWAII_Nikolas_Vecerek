@@ -3,11 +3,12 @@
 /** @var \Framework\Support\LinkGenerator $link */
 ?>
 
-<div class="container-fluid">
+<div class="container-fluid p-0 m-0">
     <div class="row">
-        <div class="col mt-5">
-            <div class="text-center">
-                <img src="<?= $link->asset('images/BEHPOPIVO_OBR_BEZTEXTU.png') ?>">
+        <div class="col mt-5 p-0 m-0">
+            <div class="text-center p-0 m-0">
+                <img src="<?= $link->asset('images/BEHPOPIVO_OBR_BEZTEXTU.png') ?>" class="w-100"
+                     style="display:block;margin:0;padding:0;border:0;">
                 <p>
                     Congratulations, you have successfully installed and run the framework
                     <strong>Vaííčko</strong> <?= App\Configuration::FW_VERSION ?>!<br>

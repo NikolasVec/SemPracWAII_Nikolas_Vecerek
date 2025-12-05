@@ -47,21 +47,21 @@ CREATE TABLE Stanovisko (
 -- ────────────────────────────────────────────────
 -- Tabuľka BEZEC (1:N k rokKonania)
 -- ────────────────────────────────────────────────
-CREATE TABLE Bezec (
-                       ID_bezca INT NOT NULL AUTO_INCREMENT,
-                       meno VARCHAR(50) NOT NULL,
-                       priezvisko VARCHAR(50) NOT NULL,
-                       email VARCHAR(100) UNIQUE NOT NULL,
-                       heslo VARCHAR(255) NOT NULL,
-                       ID_roka INT NOT NULL,
-                       PRIMARY KEY (ID_bezca),
-                       CONSTRAINT fk_bezec_rok
-                           FOREIGN KEY (ID_roka)
-                               REFERENCES rokKonania(ID_roka)
-                               ON DELETE CASCADE
-                               ON UPDATE CASCADE
+CREATE TABLE `Bezec`
+(
+    `ID_bezca` INT NOT NULL AUTO_INCREMENT,
+    `meno` VARCHAR(50) NOT NULL,
+    `priezvisko` VARCHAR(50) NOT NULL,
+    `email` VARCHAR(100) NOT NULL,
+    `pohlavie` ENUM('M', 'Ž') NOT NULL,
+    `ID_roka` INT NOT NULL,
+    PRIMARY KEY (`ID_bezca`),
+    CONSTRAINT `fk_bezec_rok`
+        FOREIGN KEY (`ID_roka`)
+            REFERENCES `rokKonania` (`ID_roka`)
+            ON DELETE CASCADE
 ) ENGINE=InnoDB
-  DEFAULT CHARSET = utf8mb4;
+  DEFAULT CHARSET=utf8mb4;
 
 
 SET foreign_key_checks = 1;
@@ -77,7 +77,7 @@ VALUES (1, 'Horská chata', 'Nízke Tatry', 'Chata sa nachádza v srdci Nízkych
        (2, 'Lesný kemp', 'Malá Fatra', 'Kemp je obklopený hustým lesom a poskytuje ideálne miesto na oddych po behu.', 2024),
        (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', 2025);
 
-INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`, `email`, `heslo`, `ID_roka`)
-VALUES (1, 'Ján', 'Novák', 'novak@gmail.com', 'heslo123', 2023),
-       (2, 'Mária', 'Kováčová', 'kovac@gmial.com', 'tajneheslo', 2024),
-       (3, 'Peter', 'Horváth', 'hornak@gmail.sk', 'bezpecneheslo', 2024);
+INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`,`pohlavie`, `email`, `ID_roka`)
+VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
+       (2, 'Mária', 'Kováčová','M', 'kovac@gmial.com',  2024),
+       (3, 'Peter', 'Horváth','M', 'hornak@gmail.sk',  2024);
