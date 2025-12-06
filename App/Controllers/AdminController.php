@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Framework\Core\BaseController;
+use Framework\DB\Connection;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 
@@ -39,6 +40,14 @@ class AdminController extends BaseController
      */
     public function index(Request $request): Response
     {
-        return $this->html();
+        $conn = Connection::getInstance();
+        $bezci = $conn->query('SELECT * FROM Bezec')->fetchAll();
+        $roky = $conn->query('SELECT * FROM rokKonania')->fetchAll();
+        $stanoviska = $conn->query('SELECT * FROM Stanovisko')->fetchAll();
+        return $this->html([
+            'bezci' => $bezci,
+            'roky' => $roky,
+            'stanoviska' => $stanoviska
+        ]);
     }
 }
