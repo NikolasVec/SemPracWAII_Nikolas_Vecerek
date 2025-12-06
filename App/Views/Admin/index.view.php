@@ -3,7 +3,6 @@
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \Framework\Auth\AppUser $user */
 ?>
-
 <div class="container-fluid">
     <div class="row">
         <div class="col">
@@ -14,62 +13,83 @@
             </div>
             <hr>
             <h3>Bežci</h3>
+            <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
                 <thead>
                 <tr>
-                    <?php if (!empty($bezci)) foreach(array_keys($bezci[0]) as $col): ?>
-                        <th><?= htmlspecialchars($col) ?></th>
-                    <?php endforeach; ?>
+                    <?php
+                    if (!empty($bezci)) {
+                        $cols = array_filter(array_keys($bezci[0]), 'is_string');
+                        foreach($cols as $col): ?>
+                            <th><?= htmlspecialchars($col) ?></th>
+                        <?php endforeach;
+                    }
+                    ?>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($bezci as $bezc): ?>
                     <tr>
-                        <?php foreach ($bezc as $val): ?>
-                            <td><?= htmlspecialchars($val) ?></td>
+                        <?php foreach ($cols as $col): ?>
+                            <td><?= htmlspecialchars($bezc[$col]) ?></td>
                         <?php endforeach; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
             <h3>Roky konania</h3>
+            <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
                 <thead>
                 <tr>
-                    <?php if (!empty($roky)) foreach(array_keys($roky[0]) as $col): ?>
-                        <th><?= htmlspecialchars($col) ?></th>
-                    <?php endforeach; ?>
+                    <?php
+                    if (!empty($roky)) {
+                        $colsRoky = array_filter(array_keys($roky[0]), 'is_string');
+                        foreach($colsRoky as $col): ?>
+                            <th><?= htmlspecialchars($col) ?></th>
+                        <?php endforeach;
+                    }
+                    ?>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($roky as $rok): ?>
                     <tr>
-                        <?php foreach ($rok as $val): ?>
-                            <td><?= htmlspecialchars($val) ?></td>
+                        <?php foreach ($colsRoky as $col): ?>
+                            <td><?= htmlspecialchars($rok[$col]) ?></td>
                         <?php endforeach; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
             <h3>Stanoviská</h3>
+            <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
                 <thead>
                 <tr>
-                    <?php if (!empty($stanoviska)) foreach(array_keys($stanoviska[0]) as $col): ?>
-                        <th><?= htmlspecialchars($col) ?></th>
-                    <?php endforeach; ?>
+                    <?php
+                    if (!empty($stanoviska)) {
+                        $colsStan = array_filter(array_keys($stanoviska[0]), 'is_string');
+                        foreach($colsStan as $col): ?>
+                            <th><?= htmlspecialchars($col) ?></th>
+                        <?php endforeach;
+                    }
+                    ?>
                 </tr>
                 </thead>
                 <tbody>
                 <?php foreach ($stanoviska as $stan): ?>
                     <tr>
-                        <?php foreach ($stan as $val): ?>
-                            <td><?= htmlspecialchars($val) ?></td>
+                        <?php foreach ($colsStan as $col): ?>
+                            <td><?= htmlspecialchars($stan[$col]) ?></td>
                         <?php endforeach; ?>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
             </table>
+            </div>
         </div>
     </div>
 </div>
