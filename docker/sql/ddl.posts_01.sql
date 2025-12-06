@@ -67,13 +67,13 @@ CREATE TABLE `Bezec`
 SET foreign_key_checks = 1;
 
 -- Príklad vloženia údajov
-INSERT INTO `rokKonania` (`ID_roka`,`rok`, `datum_konania`, `pocet_ucastnikov`)
-VALUES (2020,2020, '2020-06-17', 110),
-       (2021,2021, '2021-06-10', 107),
-       (2022,2022, '2022-06-14', 100),
-       (2023,2023, '2023-06-15', 103),
-       (2024,2024, '2024-06-15', 120),
-       (2025,2025, '2025-06-10', 110);
+INSERT INTO `rokKonania` (`ID_roka`,`rok`, `datum_konania`)
+VALUES (2020,2020, '2020-06-17'),
+       (2021,2021, '2021-06-10'),
+       (2022,2022, '2022-06-14'),
+       (2023,2023, '2023-06-15'),
+       (2024,2024, '2024-06-15'),
+       (2025,2025, '2025-06-10');
 
 
 INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `ID_roka`)
@@ -94,3 +94,57 @@ VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
          (6, 'Martin', 'Farkaš','M', 'farkas@gmail.com', 2025),
          (7, 'Zuzana', 'Mlynarčíková','Ž', 'mlynarová@gmail.com', 2023),
             (8, 'Tomáš', 'Kučera','M', 'kučora@gmail.com', 2023);
+
+-- Trigger na automatickú aktualizáciu počtu účastníkov v rokKonania
+DELIMITER //
+CREATE TRIGGER update_pocet_ucastnikov_after_bezec_insert
+AFTER INSERT ON Bezec
+FOR EACH ROW
+BEGIN
+    UPDATE rokKonania
+    SET pocet_ucastnikov = (
+        SELECT COUNT(*) FROM Bezec WHERE ID_roka = NEW.ID_roka
+    )
+    WHERE ID_roka = NEW.ID_roka;
+END;//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER update_pocet_ucastnikov_after_bezec_delete
+AFTER DELETE ON Bezec
+FOR EACH ROW
+BEGIN
+    UPDATE rokKonania
+    SET pocet_ucastnikov = (
+        SELECT COUNT(*) FROM Bezec WHERE ID_roka = OLD.ID_roka
+    )
+    WHERE ID_roka = OLD.ID_roka;
+END;//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER update_pocet_ucastnikov_after_bezec_update
+AFTER UPDATE ON Bezec
+FOR EACH ROW
+BEGIN
+    -- Aktualizácia pre starý rok
+    UPDATE rokKonania
+    SET pocet_ucastnikov = (
+        SELECT COUNT(*) FROM Bezec WHERE ID_roka = OLD.ID_roka
+    )
+    WHERE ID_roka = OLD.ID_roka;
+    -- Aktualizácia pre nový rok
+    UPDATE rokKonania
+    SET pocet_ucastnikov = (
+        SELECT COUNT(*) FROM Bezec WHERE ID_roka = NEW.ID_roka
+    )
+    WHERE ID_roka = NEW.ID_roka;
+END;//
+DELIMITER ;
+
+-- Po vložení bežcov nastav správny počet účastníkov v rokKonania (bezpečne)
+UPDATE rokKonania rk
+SET pocet_ucastnikov = (
+    SELECT COUNT(*) FROM Bezec b WHERE b.ID_roka = rk.ID_roka
+)
+WHERE rk.ID_roka IN (SELECT DISTINCT ID_roka FROM Bezec);

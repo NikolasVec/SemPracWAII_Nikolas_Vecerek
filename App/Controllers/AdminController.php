@@ -50,4 +50,70 @@ class AdminController extends BaseController
             'stanoviska' => $stanoviska
         ]);
     }
+
+    /**
+     * Handles AJAX add requests for Bezec, rokKonania, Stanovisko.
+     * @param Request $request
+     * @return Response
+     */
+    public function add(Request $request): Response
+    {
+        // Debug: log POST data
+        file_put_contents(__DIR__ . '/debug.log', print_r($_POST, true) . PHP_EOL, FILE_APPEND);
+        $section = $_GET['section'] ?? null;
+        $method = $_SERVER['REQUEST_METHOD'];
+        $conn = Connection::getInstance();
+        try {
+            if ($method !== 'POST') {
+                return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
+            }
+            if ($section === 'bezci') {
+                $meno = $_POST['meno'] ?? null;
+                $priezvisko = $_POST['priezvisko'] ?? null;
+                $email = $_POST['email'] ?? null;
+                $pohlavie = $_POST['pohlavie'] ?? null;
+                $ID_roka = $_POST['ID_roka'] ?? null;
+                if (!$meno || !$priezvisko || !$email || !$pohlavie || !$ID_roka) {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
+                $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $ID_roka]);
+                return $this->json(['success' => true]);
+            } elseif ($section === 'roky') {
+                $rok = $_POST['rok'] ?? null;
+                $datum = $_POST['datum_konania'] ?? null;
+                if ($rok === null || $datum === null || $rok === '' || $datum === '') {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                // Zisti nové ID_roka (bude auto_increment, ale potrebujeme ho na spočítanie bežcov)
+                // Najprv vlož rok a dátum, pocet_ucastnikov dočasne 0
+                $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov) VALUES (?, ?, 0)');
+                $stmt->execute([$rok, $datum]);
+                $ID_roka = $conn->query('SELECT LAST_INSERT_ID()')->fetchColumn();
+                // Spočítaj bežcov s týmto ID_roka
+                $count = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE ID_roka = ?');
+                $count->execute([$ID_roka]);
+                $pocet = $count->fetchColumn();
+                // Aktualizuj počet účastníkov
+                $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                $stmt->execute([$pocet, $ID_roka]);
+                return $this->json(['success' => true]);
+            } elseif ($section === 'stanoviska') {
+                $nazov = $_POST['nazov'] ?? null;
+                $poloha = $_POST['poloha'] ?? null;
+                $popis = $_POST['popis'] ?? null;
+                $ID_roka = $_POST['ID_roka'] ?? null;
+                if (!$nazov || !$ID_roka) {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, ID_roka) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$nazov, $poloha, $popis, $ID_roka]);
+                return $this->json(['success' => true]);
+            } else {
+                return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+            }
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }
