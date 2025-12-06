@@ -68,16 +68,29 @@ SET foreign_key_checks = 1;
 
 -- Príklad vloženia údajov
 INSERT INTO `rokKonania` (`ID_roka`,`rok`, `datum_konania`, `pocet_ucastnikov`)
-VALUES (2023,2023, '2024-06-15', 103),
+VALUES (2020,2020, '2020-06-17', 110),
+       (2021,2021, '2021-06-10', 107),
+       (2022,2022, '2022-06-14', 100),
+       (2023,2023, '2023-06-15', 103),
        (2024,2024, '2024-06-15', 120),
-       (2025,2023, '2023-06-10', 110);
+       (2025,2025, '2025-06-10', 110);
+
 
 INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `ID_roka`)
 VALUES (1, 'Horská chata', 'Nízke Tatry', 'Chata sa nachádza v srdci Nízkych Tatier a ponúka útulné ubytovanie pre bežcov.', 2023),
        (2, 'Lesný kemp', 'Malá Fatra', 'Kemp je obklopený hustým lesom a poskytuje ideálne miesto na oddych po behu.', 2024),
-       (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', 2025);
+       (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', 2025),
+         (4, 'Mestský park', 'Bratislava', 'Park v centre mesta ponúka zelené prostredie pre bežcov a ich rodiny.', 2023),
+            (5, 'Horský prameň', 'Vysoké Tatry', 'Prameň s čerstvou horskou vodou je ideálny na osvieženie počas behu.', 2024),
+                (6, 'Riečna oáza', 'Dunajská Streda', 'Oáza pri rieke poskytuje krásne výhľady a pokojné prostredie pre bežcov.', 2025),
+                     (7, 'Kultúrne centrum', 'Košice', 'Centrum ponúka kultúrne zážitky a oddych po behu v mestskom prostredí.', 2023);
 
 INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`,`pohlavie`, `email`, `ID_roka`)
 VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
        (2, 'Mária', 'Kováčová','M', 'kovac@gmial.com',  2024),
-       (3, 'Peter', 'Horváth','M', 'hornak@gmail.sk',  2024);
+       (3, 'Peter', 'Horváth','M', 'hornak@gmail.sk',  2024),
+         (4, 'Anna', 'Vargová','Ž', 'vargova@gmail.com', 2025),
+       (5, 'Lucia', 'Bieliková','Ž', 'bielikova@gmail.com', 2025),
+         (6, 'Martin', 'Farkaš','M', 'farkas@gmail.com', 2025),
+         (7, 'Zuzana', 'Mlynarčíková','Ž', 'mlynarová@gmail.com', 2023),
+            (8, 'Tomáš', 'Kučera','M', 'kučora@gmail.com', 2023);
