@@ -58,96 +58,80 @@ class AdminController extends BaseController
      */
     public function add(Request $request): Response
     {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
+        // Debug: log POST data
+        file_put_contents(__DIR__ . '/debug.log', print_r($_POST, true) . PHP_EOL, FILE_APPEND);
+        file_put_contents(__DIR__ . '/debug.log', print_r($_POST, true) . PHP_EOL, FILE_APPEND);
         $section = $_GET['section'] ?? null;
+        $method = $_SERVER['REQUEST_METHOD'];
         $conn = Connection::getInstance();
-
-        if ($method !== 'POST') {
-            return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
-        }
-
         try {
+            if ($method !== 'POST') {
+                return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
+            }
             if ($section === 'bezci') {
                 $meno = $_POST['meno'] ?? null;
                 $priezvisko = $_POST['priezvisko'] ?? null;
                 $email = $_POST['email'] ?? null;
                 $pohlavie = $_POST['pohlavie'] ?? null;
                 $ID_roka = $_POST['ID_roka'] ?? null;
-
                 if (!$meno || !$priezvisko || !$email || !$pohlavie || !$ID_roka) {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
-
                 $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
                 $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $ID_roka]);
-
-                // Aktualizuj pocet_ucastnikov v rokKonania
-                $count = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE ID_roka = ?');
-                $count->execute([$ID_roka]);
-                $pocet = (int)$count->fetchColumn();
-                $upd = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
-                $upd->execute([$pocet, $ID_roka]);
-
                 return $this->json(['success' => true]);
-
             } elseif ($section === 'roky') {
-                $rok = $_POST['rok'] ?? null;
                 $datum = $_POST['datum_konania'] ?? null;
-
                 if ($rok === null || $datum === null || $rok === '' || $datum === '') {
-                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
-                }
-
+                $datum = $_POST['datum_konania'] ?? null;
+                if ($rok === null || $datum === null || $rok === '' || $datum === '') {
+                // Zisti nové ID_roka (bude auto_increment, ale potrebujeme ho na spočítanie bežcov)
+                // Najprv vlož rok a dátum, pocet_ucastnikov dočasne 0
                 $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov) VALUES (?, ?, 0)');
                 $stmt->execute([$rok, $datum]);
                 $ID_roka = $conn->query('SELECT LAST_INSERT_ID()')->fetchColumn();
-
-                // Spočítaj bežcov a aktualizuj
+                // Spočítaj bežcov s týmto ID_roka
                 $count = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE ID_roka = ?');
                 $count->execute([$ID_roka]);
-                $pocet = (int)$count->fetchColumn();
-                $upd = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
-                $upd->execute([$pocet, $ID_roka]);
-
-                return $this->json(['success' => true, 'ID_roka' => $ID_roka]);
-
-            } elseif ($section === 'stanoviska') {
+                $pocet = $count->fetchColumn();
+                // Aktualizuj počet účastníkov
+                $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                $stmt->execute([$pocet, $ID_roka]);
+                // Zisti nové ID_roka (bude auto_increment, ale potrebujeme ho na spočítanie bežcov)
+                // Najprv vlož rok a dátum, pocet_ucastnikov dočasne 0
+                $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov) VALUES (?, ?, 0)');
+                $poloha = $_POST['poloha'] ?? null;
+                $popis = $_POST['popis'] ?? null;
+                $ID_roka = $_POST['ID_roka'] ?? null;
+                if (!$nazov || !$ID_roka) {
+                $ID_roka = $conn->query('SELECT LAST_INSERT_ID()')->fetchColumn();
+                // Spočítaj bežcov s týmto ID_roka
+                $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, ID_roka) VALUES (?, ?, ?, ?)');
+                $stmt->execute([$nazov, $poloha, $popis, $ID_roka]);
+                $pocet = $count->fetchColumn();
+                // Aktualizuj počet účastníkov
+                $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                $stmt->execute([$pocet, $ID_roka]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
                 $nazov = $_POST['nazov'] ?? null;
                 $poloha = $_POST['poloha'] ?? null;
                 $popis = $_POST['popis'] ?? null;
                 $ID_roka = $_POST['ID_roka'] ?? null;
-
-                if (!$nazov || !$ID_roka) {
-                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
-                }
-
+     * Vymaže záznam podľa sekcie a ID
                 $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, ID_roka) VALUES (?, ?, ?, ?)');
-                $stmt->execute([$nazov, $poloha, $popis, $ID_roka]);
-
+    public function delete(Request $request): Response
                 return $this->json(['success' => true]);
-
-            } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+        $id = $_GET['id'] ?? null;
             }
         } catch (\Throwable $e) {
-            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        if ($method !== 'POST') {
+            return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
-    }
-
-    /**
-     * Vymaže záznam podľa sekcie a ID
-     */
-    public function delete(Request $request): Response
-    {
-        $method = $_SERVER['REQUEST_METHOD'] ?? 'GET';
-        $section = $_GET['section'] ?? null;
-        $id = $_GET['id'] ?? null;
-        $conn = Connection::getInstance();
-
         if (!$section || !$id) {
             return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
         }
-
         try {
             if ($section === 'bezci') {
                 $stmt = $conn->prepare('DELETE FROM Bezec WHERE ID_bezca = ?');
@@ -157,7 +141,6 @@ class AdminController extends BaseController
                 $stmt = $conn->prepare('DELETE FROM Stanovisko WHERE ID_stanoviska = ?');
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
-            }
 
             $stmt->execute([$id]);
             return $this->json(['success' => true]);
@@ -174,13 +157,11 @@ class AdminController extends BaseController
         $section = $_GET['section'] ?? null;
         $id = $_GET['id'] ?? null;
         $conn = Connection::getInstance();
-
         if (!$section || !$id) {
             return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
         }
-
         try {
-            if ($section === 'bezci') {
+    /**
                 $stmt = $conn->prepare('SELECT * FROM Bezec WHERE ID_bezca = ?');
             } elseif ($section === 'roky') {
                 $stmt = $conn->prepare('SELECT * FROM rokKonania WHERE ID_roka = ?');
@@ -189,7 +170,6 @@ class AdminController extends BaseController
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
             }
-
             $stmt->execute([$id]);
             $item = $stmt->fetch();
             if (!$item) {
@@ -209,33 +189,51 @@ class AdminController extends BaseController
         $section = $_GET['section'] ?? null;
         $id = $_POST['id'] ?? null;
         $conn = Connection::getInstance();
-
         if (!$section || !$id) {
             return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
         }
-
         try {
             if ($section === 'bezci') {
-                $meno = $_POST['meno'] ?? null;
-                $priezvisko = $_POST['priezvisko'] ?? null;
-                $email = $_POST['email'] ?? null;
-                $pohlavie = $_POST['pohlavie'] ?? null;
-                $ID_roka = $_POST['ID_roka'] ?? null;
-
+     */
+    public function delete(Request $request): Response
+    {
+        $section = $_GET['section'] ?? null;
+        $id = $_GET['id'] ?? null;
                 if (!$meno || !$priezvisko || !$email || !$pohlavie || !$ID_roka) {
+        $conn = Connection::getInstance();
+        if ($method !== 'POST') {
+                $stmt = $conn->prepare('UPDATE Bezec SET meno=?, priezvisko=?, email=?, pohlavie=?, ID_roka=? WHERE ID_bezca=?');
+        }
+            return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
+        try {
+                $datum = $_POST['datum_konania'] ?? null;
+                if ($rok === null || $datum === null || $rok === '' || $datum === '') {
+                $stmt = $conn->prepare('DELETE FROM Bezec WHERE ID_bezca = ?');
+            } elseif ($section === 'roky') {
+                $stmt = $conn->prepare('UPDATE rokKonania SET rok=?, datum_konania=? WHERE ID_roka=?');
+                $stmt->execute([$rok, $datum, $id]);
+                // Počet účastníkov sa aktualizuje triggerom alebo samostatne
+            } else {
+            }
+                $poloha = $_POST['poloha'] ?? null;
+                $popis = $_POST['popis'] ?? null;
+                $ID_roka = $_POST['ID_roka'] ?? null;
+                if (!$nazov || !$ID_roka) {
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+                $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, ID_roka=? WHERE ID_stanoviska=?');
+                $stmt->execute([$nazov, $poloha, $popis, $ID_roka, $id]);
+
+    /**
+     * Získa záznam podľa sekcie a ID (pre editáciu)
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
-
                 $stmt = $conn->prepare('UPDATE Bezec SET meno=?, priezvisko=?, email=?, pohlavie=?, ID_roka=? WHERE ID_bezca=?');
+
                 $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $ID_roka, $id]);
-
-                // Aktualizuj pocet_ucastnikov pre prípad zmeny roka
-                $count = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE ID_roka = ?');
-                $count->execute([$ID_roka]);
-                $pocet = (int)$count->fetchColumn();
-                $upd = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
-                $upd->execute([$pocet, $ID_roka]);
-
             } elseif ($section === 'roky') {
                 $rok = $_POST['rok'] ?? null;
                 $datum = $_POST['datum_konania'] ?? null;
@@ -244,24 +242,20 @@ class AdminController extends BaseController
                 }
                 $stmt = $conn->prepare('UPDATE rokKonania SET rok=?, datum_konania=? WHERE ID_roka=?');
                 $stmt->execute([$rok, $datum, $id]);
-
+                // Počet účastníkov sa aktualizuje triggerom alebo samostatne
             } elseif ($section === 'stanoviska') {
                 $nazov = $_POST['nazov'] ?? null;
                 $poloha = $_POST['poloha'] ?? null;
                 $popis = $_POST['popis'] ?? null;
                 $ID_roka = $_POST['ID_roka'] ?? null;
-
                 if (!$nazov || !$ID_roka) {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
-
                 $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, ID_roka=? WHERE ID_stanoviska=?');
                 $stmt->execute([$nazov, $poloha, $popis, $ID_roka, $id]);
-
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
             }
-
             return $this->json(['success' => true]);
         } catch (\Throwable $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);

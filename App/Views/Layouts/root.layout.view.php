@@ -26,6 +26,11 @@
 
 <!-- Nastavenie navbaru -->
 <nav class="navbar navbar-expand-sm fixed-top">
+    <!-- Hamburger (offcanvas) v ľavom rohu -->
+    <button class="btn btn-outline-light me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu" aria-controls="offcanvasMenu" aria-label="Otvoriť menu" style="margin-left:8px;">
+        <span class="navbar-toggler-icon"></span>
+    </button>
+
     <div class="container-fluid d-flex justify-content-center align-items-center">
         <div class="d-flex align-items-center" style="gap: 2rem; margin-left: 7vw;">
             <!-- Ľavé tlačidlá -->
@@ -52,6 +57,28 @@
         <?php } ?>
     </div>
 </nav>
+
+<!-- Offcanvas menu chứa položky hamburgeru -->
+<div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
+    <div class="offcanvas-header">
+        <h5 class="offcanvas-title" id="offcanvasMenuLabel"><?= App\Configuration::APP_NAME ?></h5>
+        <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Zatvoriť"></button>
+    </div>
+    <div class="offcanvas-body">
+        <div class="list-group">
+            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VÝHODNOTENIE</strong></a>
+            <?php if ($user->isLoggedIn()) { ?>
+                <a class="list-group-item list-group-item-action" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+            <?php } else { ?>
+                <a class="list-group-item list-group-item-action" href="<?= App\Configuration::LOGIN_URL ?>"><strong>Log in</strong></a>
+            <?php } ?>
+        </div>
+    </div>
+</div>
+
 <div class="container-fluid mt-3">
     <div class="web-content">
         <?= $contentHTML ?>

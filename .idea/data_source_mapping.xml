@@ -1,0 +1,6 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="DataSourcePerFileMappings">
+    <file url="file://$PROJECT_DIR$/docker/sql/ddl.posts_01.sql" value="49af8ff1-b543-4d0f-80d1-037e88ceb369" />
+  </component>
+</project>
