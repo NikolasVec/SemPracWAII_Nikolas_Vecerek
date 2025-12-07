@@ -40,7 +40,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('bezci')">Pridať</button>
-                <button class="btn btn-warning">Upraviť</button>
+                <button class="btn btn-warning" data-section="bezci">Upraviť</button>
                 <button class="btn btn-danger" data-section="bezci">Vymazať</button>
             </div>
             <h3>Roky konania</h3>
@@ -71,7 +71,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('roky')">Pridať</button>
-                <button class="btn btn-warning">Upraviť</button>
+                <button class="btn btn-warning" data-section="roky">Upraviť</button>
                 <button class="btn btn-danger" data-section="roky">Vymazať</button>
             </div>
             <h3>Stanoviská</h3>
@@ -102,7 +102,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('stanoviska')">Pridať</button>
-                <button class="btn btn-warning">Upraviť</button>
+                <button class="btn btn-warning" data-section="stanoviska">Upraviť</button>
                 <button class="btn btn-danger" data-section="stanoviska">Vymazať</button>
             </div>
         </div>
@@ -152,8 +152,51 @@
   </div>
 </div>
 
+<!-- Modal pre zadanie ID na úpravu -->
+<div class="modal fade" id="editIdModal" tabindex="-1" aria-labelledby="editIdModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editIdModalLabel">Upraviť záznam</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editIdForm">
+        <div class="modal-body">
+          <label for="editId" class="form-label">Zadajte ID záznamu na úpravu:</label>
+          <input type="number" class="form-control" id="editId" name="editId" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+          <button type="submit" class="btn btn-warning">Pokračovať</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pre editáciu záznamu -->
+<div class="modal fade" id="editModal" tabindex="-1" aria-labelledby="editModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="editModalLabel">Upraviť záznam</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="editForm">
+        <div class="modal-body" id="editFormBody">
+          <!-- Dynamicky generované polia -->
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+          <button type="submit" class="btn btn-warning">Uložiť zmeny</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
 <script>
-// Definícia polí pre každý typ tabuľky
+// Definícia polí pre každý typ tabuľky (používa sa na generovanie formulárov)
 const formFields = {
     bezci: [
         {name: 'meno', label: 'Meno', type: 'text', required: true},
@@ -175,6 +218,7 @@ const formFields = {
 };
 let currentSection = null;
 
+// Otvorí modal na pridanie záznamu a vygeneruje formulár podľa sekcie
 function openAddModal(section) {
     currentSection = section;
     const fields = formFields[section];
@@ -200,6 +244,7 @@ function openAddModal(section) {
     modal.show();
 }
 
+// Handler pre odoslanie formulára na pridanie záznamu (AJAX)
 document.getElementById('addForm').onsubmit = function(e) {
     e.preventDefault();
     const formData = new FormData(e.target);
@@ -218,6 +263,7 @@ document.getElementById('addForm').onsubmit = function(e) {
     .catch(() => alert('Chyba pri komunikácii so serverom.'));
 };
 
+// Otvorí modal na vymazanie záznamu podľa sekcie
 function openDeleteModal(section) {
     window.currentDeleteSection = section;
     document.getElementById('deleteId').value = '';
@@ -225,7 +271,7 @@ function openDeleteModal(section) {
     modal.show();
 }
 
-// Pridaj handler na tlačidlá Vymazať
+// Handler na tlačidlá Vymazať (otvára modal na zadanie ID)
 const deleteButtons = document.querySelectorAll('.btn-danger[data-section]');
 deleteButtons.forEach((btn) => {
     btn.onclick = function() {
@@ -234,11 +280,106 @@ deleteButtons.forEach((btn) => {
     };
 });
 
+// Handler pre odoslanie formulára na vymazanie záznamu (najprv načíta údaje a zobrazí potvrdenie)
 document.getElementById('deleteForm').onsubmit = function(e) {
     e.preventDefault();
     const id = document.getElementById('deleteId').value;
-    fetch(`/?c=Admin&a=delete&section=${window.currentDeleteSection}&id=${id}`, {
-        method: 'POST'
+    // Najprv načítaj údaje záznamu
+    fetch(`/?c=Admin&a=get&section=${window.currentDeleteSection}&id=${id}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.item) {
+            // Priprav text podľa sekcie
+            let info = '';
+            if (window.currentDeleteSection === 'bezci') {
+                info = `${data.item.meno} ${data.item.priezvisko}`;
+            } else if (window.currentDeleteSection === 'roky') {
+                info = `rok ${data.item.rok}`;
+            } else if (window.currentDeleteSection === 'stanoviska') {
+                info = `${data.item.nazov}`;
+            }
+            if (confirm(`Naozaj chcete vymazať záznam: ${info}?`)) {
+                // Skutočné vymazanie
+                fetch(`/?c=Admin&a=delete&section=${window.currentDeleteSection}&id=${id}`, {
+                    method: 'POST'
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        location.reload();
+                    } else {
+                        alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+                    }
+                })
+                .catch(() => alert('Chyba pri komunikácii so serverom.'));
+            }
+        } else {
+            alert('Záznam s daným ID neexistuje.');
+        }
+    })
+    .catch(() => alert('Chyba pri načítaní údajov.'));
+};
+
+// Handler na tlačidlá Upraviť (otvára modal na zadanie ID pre úpravu)
+const editButtons = document.querySelectorAll('.btn-warning[data-section]');
+editButtons.forEach((btn) => {
+    btn.onclick = function() {
+        let section = btn.getAttribute('data-section');
+        window.currentEditSection = section;
+        document.getElementById('editId').value = '';
+        var modal = new bootstrap.Modal(document.getElementById('editIdModal'));
+        modal.show();
+    };
+});
+
+// Handler pre odoslanie formulára na zadanie ID pre úpravu (načíta dáta cez AJAX a otvorí editovací modal)
+document.getElementById('editIdForm').onsubmit = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('editId').value;
+    fetch(`/?c=Admin&a=get&section=${window.currentEditSection}&id=${id}`)
+    .then(res => res.json())
+    .then(data => {
+        if (data.success && data.item) {
+            // Vygeneruj editovací formulár podľa sekcie a predvyplň hodnoty
+            const section = window.currentEditSection;
+            const fields = formFields[section];
+            let html = '';
+            fields.forEach(field => {
+                html += `<div class="mb-3">`;
+                html += `<label class="form-label">${field.label}${field.required ? ' *' : ''}</label>`;
+                let value = data.item[field.name] ?? '';
+                if (field.type === 'select') {
+                    html += `<select class="form-select" name="${field.name}" required>`;
+                    field.options.forEach(opt => {
+                        html += `<option value="${opt}"${opt==value?' selected':''}>${opt}</option>`;
+                    });
+                    html += `</select>`;
+                } else if (field.type === 'textarea') {
+                    html += `<textarea class="form-control" name="${field.name}" ${field.required ? 'required' : ''}>${value}</textarea>`;
+                } else {
+                    html += `<input class="form-control" type="${field.type}" name="${field.name}" value="${value}" ${field.required ? 'required' : ''}>`;
+                }
+                html += `</div>`;
+            });
+            document.getElementById('editFormBody').innerHTML = html;
+            window.currentEditId = id;
+            var modal = new bootstrap.Modal(document.getElementById('editModal'));
+            modal.show();
+        } else {
+            alert('Záznam s daným ID neexistuje.');
+        }
+    })
+    .catch(() => alert('Chyba pri načítaní údajov.'));
+};
+
+// Handler pre odoslanie editovacieho formulára (AJAX, uloží zmeny do DB)
+document.getElementById('editForm').onsubmit = function(e) {
+    e.preventDefault();
+    const formData = new FormData(e.target);
+    formData.append('id', window.currentEditId);
+    fetch(`/?c=Admin&a=update&section=${window.currentEditSection}`, {
+        method: 'POST',
+        body: formData
     })
     .then(res => res.json())
     .then(data => {
@@ -248,6 +389,6 @@ document.getElementById('deleteForm').onsubmit = function(e) {
             alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
         }
     })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+    .catch(() => alert('Chyba pri ukladaní zmien.'));
 };
 </script>

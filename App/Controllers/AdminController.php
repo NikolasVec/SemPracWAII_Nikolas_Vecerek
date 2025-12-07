@@ -148,4 +148,87 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    /**
+     * Získa záznam podľa sekcie a ID (pre editáciu)
+     */
+    public function get(Request $request): Response
+    {
+        $section = $_GET['section'] ?? null;
+        $id = $_GET['id'] ?? null;
+        $conn = Connection::getInstance();
+        if (!$section || !$id) {
+            return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
+        }
+        try {
+            if ($section === 'bezci') {
+                $stmt = $conn->prepare('SELECT * FROM Bezec WHERE ID_bezca = ?');
+            } elseif ($section === 'roky') {
+                $stmt = $conn->prepare('SELECT * FROM rokKonania WHERE ID_roka = ?');
+            } elseif ($section === 'stanoviska') {
+                $stmt = $conn->prepare('SELECT * FROM Stanovisko WHERE ID_stanoviska = ?');
+            } else {
+                return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+            }
+            $stmt->execute([$id]);
+            $item = $stmt->fetch();
+            if (!$item) {
+                return $this->json(['success' => false, 'message' => 'Záznam neexistuje.']);
+            }
+            return $this->json(['success' => true, 'item' => $item]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Upraví záznam podľa sekcie a ID
+     */
+    public function update(Request $request): Response
+    {
+        $section = $_GET['section'] ?? null;
+        $id = $_POST['id'] ?? null;
+        $conn = Connection::getInstance();
+        if (!$section || !$id) {
+            return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
+        }
+        try {
+            if ($section === 'bezci') {
+                $meno = $_POST['meno'] ?? null;
+                $priezvisko = $_POST['priezvisko'] ?? null;
+                $email = $_POST['email'] ?? null;
+                $pohlavie = $_POST['pohlavie'] ?? null;
+                $ID_roka = $_POST['ID_roka'] ?? null;
+                if (!$meno || !$priezvisko || !$email || !$pohlavie || !$ID_roka) {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                $stmt = $conn->prepare('UPDATE Bezec SET meno=?, priezvisko=?, email=?, pohlavie=?, ID_roka=? WHERE ID_bezca=?');
+                $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $ID_roka, $id]);
+            } elseif ($section === 'roky') {
+                $rok = $_POST['rok'] ?? null;
+                $datum = $_POST['datum_konania'] ?? null;
+                if ($rok === null || $datum === null || $rok === '' || $datum === '') {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                $stmt = $conn->prepare('UPDATE rokKonania SET rok=?, datum_konania=? WHERE ID_roka=?');
+                $stmt->execute([$rok, $datum, $id]);
+                // Počet účastníkov sa aktualizuje triggerom alebo samostatne
+            } elseif ($section === 'stanoviska') {
+                $nazov = $_POST['nazov'] ?? null;
+                $poloha = $_POST['poloha'] ?? null;
+                $popis = $_POST['popis'] ?? null;
+                $ID_roka = $_POST['ID_roka'] ?? null;
+                if (!$nazov || !$ID_roka) {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, ID_roka=? WHERE ID_stanoviska=?');
+                $stmt->execute([$nazov, $poloha, $popis, $ID_roka, $id]);
+            } else {
+                return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+            }
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }
