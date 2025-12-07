@@ -25,7 +25,7 @@
 <body>
 
 <!-- Nastavenie navbaru -->
-<nav class="navbar navbar-expand-sm bg-light fixed-top">
+<nav class="navbar navbar-expand-sm fixed-top">
     <div class="container-fluid d-flex justify-content-center align-items-center">
         <div class="d-flex align-items-center" style="gap: 2rem; margin-left: 7vw;">
             <!-- Ľavé tlačidlá -->
