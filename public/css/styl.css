@@ -86,6 +86,78 @@ table.table td, table.table th {
 }
 
 
+.navbar .nav-link,
+.navbar .btn {
+    transition: background-color 180ms ease, color 180ms ease, transform 150ms ease, box-shadow 180ms ease;
+    border-radius: 8px;
+    padding: 0.38rem 0.65rem;
+    margin: 0 0.25rem;
+    color: #111;
+    background: #ffcf0f;
+    border: 1px solid rgba(0,0,0,0.06);
+    cursor: pointer;
+    position: relative;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
 
+/* jemné zdvihnutie a tieň pri hover - teraz sivá pozadie */
+.navbar .nav-link:hover,
+.navbar .btn:hover {
+    background: #ffffff;
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+    color: #000;
+}
 
+/* aktívny/kliknutý stav */
+.navbar .nav-link:active,
+.navbar .btn:active {
+    transform: translateY(-1px);
+    box-shadow: 0 6px 12px rgba(0,0,0,0.06);
+}
 
+/* varianty pre tmavšie tlačidlá, ak potrebné použiť triedu .btn-dark */
+.navbar .btn-dark {
+    background: rgba(0,0,0,0.08);
+    color: #111;
+    border: 1px solid rgba(0,0,0,0.12);
+}
+
+/* vizuálny focus pre prístupnosť (klávesnicová navigácia) */
+.navbar .nav-link:focus,
+.navbar .btn:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 206, 10, 0.22); /* žltý „halo" v súlade s témou */
+}
+
+/* dekoratívna linková animácia (underline grow) */
+.navbar .nav-link {
+    background-image: linear-gradient(transparent, transparent), linear-gradient(90deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12));
+    background-repeat: no-repeat;
+    background-position: left 100%;
+    background-size: 0 2px, 100% 100%;
+}
+
+.navbar .nav-link:hover {
+    background-size: 100% 2px, 100% 100%;
+}
+
+/* malé rozhranie pre mobilné zariadenia */
+@media (max-width: 576px) {
+    .navbar .nav-link,
+    .navbar .btn {
+        padding: 0.45rem 0.6rem;
+        font-size: 0.95rem;
+        margin: 0 0.15rem;
+    }
+}
+
+/* Voliteľné: jemné CSS pre ikony v tlačidlách (ak používate svg alebo img) */
+.navbar .btn img,
+.navbar .btn svg {
+    width: 20px;
+    height: 20px;
+    display: inline-block;
+}
