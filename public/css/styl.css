@@ -163,7 +163,7 @@ table.table td, table.table th {
 }
 
 /* Hide nav items and center logo on narrow screens (<=1100px) */
-@media (max-width: 1100px) {
+@media (max-width: 1000px) {
     /* Hide left/right navigation groups and the auth area */
     .nav-left-group,
     .nav-right-group,
@@ -180,7 +180,7 @@ table.table td, table.table th {
         margin-left: 0 !important;
         margin-right: 0 !important;
         position: absolute;
-        left: 50%;
+        left: 0%;
         transform: translateX(-50%);
     }
 
