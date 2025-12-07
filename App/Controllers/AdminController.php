@@ -116,4 +116,36 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    /**
+     * Vymaže záznam podľa sekcie a ID
+     */
+    public function delete(Request $request): Response
+    {
+        $section = $_GET['section'] ?? null;
+        $id = $_GET['id'] ?? null;
+        $method = $_SERVER['REQUEST_METHOD'];
+        $conn = Connection::getInstance();
+        if ($method !== 'POST') {
+            return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
+        }
+        if (!$section || !$id) {
+            return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo ID.']);
+        }
+        try {
+            if ($section === 'bezci') {
+                $stmt = $conn->prepare('DELETE FROM Bezec WHERE ID_bezca = ?');
+            } elseif ($section === 'roky') {
+                $stmt = $conn->prepare('DELETE FROM rokKonania WHERE ID_roka = ?');
+            } elseif ($section === 'stanoviska') {
+                $stmt = $conn->prepare('DELETE FROM Stanovisko WHERE ID_stanoviska = ?');
+            } else {
+                return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+            }
+            $stmt->execute([$id]);
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
 }

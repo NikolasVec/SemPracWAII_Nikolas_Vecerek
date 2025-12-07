@@ -41,7 +41,7 @@
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('bezci')">Pridať</button>
                 <button class="btn btn-warning">Upraviť</button>
-                <button class="btn btn-danger">Vymazať</button>
+                <button class="btn btn-danger" data-section="bezci">Vymazať</button>
             </div>
             <h3>Roky konania</h3>
             <div class="table-scroll-wrapper">
@@ -72,7 +72,7 @@
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('roky')">Pridať</button>
                 <button class="btn btn-warning">Upraviť</button>
-                <button class="btn btn-danger">Vymazať</button>
+                <button class="btn btn-danger" data-section="roky">Vymazať</button>
             </div>
             <h3>Stanoviská</h3>
             <div class="table-scroll-wrapper">
@@ -103,7 +103,7 @@
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('stanoviska')">Pridať</button>
                 <button class="btn btn-warning">Upraviť</button>
-                <button class="btn btn-danger">Vymazať</button>
+                <button class="btn btn-danger" data-section="stanoviska">Vymazať</button>
             </div>
         </div>
     </div>
@@ -124,6 +124,28 @@
         <div class="modal-footer">
           <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
           <button type="submit" class="btn btn-primary">Uložiť</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Modal pre vymazanie záznamu -->
+<div class="modal fade" id="deleteModal" tabindex="-1" aria-labelledby="deleteModalLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="deleteModalLabel">Vymazať záznam</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="deleteForm">
+        <div class="modal-body">
+          <label for="deleteId" class="form-label">Zadajte ID záznamu na vymazanie:</label>
+          <input type="number" class="form-control" id="deleteId" name="deleteId" required>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+          <button type="submit" class="btn btn-danger">Vymazať</button>
         </div>
       </form>
     </div>
@@ -184,6 +206,39 @@ document.getElementById('addForm').onsubmit = function(e) {
     fetch(`/?c=Admin&a=add&section=${currentSection}`, {
         method: 'POST',
         body: formData
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+};
+
+function openDeleteModal(section) {
+    window.currentDeleteSection = section;
+    document.getElementById('deleteId').value = '';
+    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
+    modal.show();
+}
+
+// Pridaj handler na tlačidlá Vymazať
+const deleteButtons = document.querySelectorAll('.btn-danger[data-section]');
+deleteButtons.forEach((btn) => {
+    btn.onclick = function() {
+        let section = btn.getAttribute('data-section');
+        openDeleteModal(section);
+    };
+});
+
+document.getElementById('deleteForm').onsubmit = function(e) {
+    e.preventDefault();
+    const id = document.getElementById('deleteId').value;
+    fetch(`/?c=Admin&a=delete&section=${window.currentDeleteSection}&id=${id}`, {
+        method: 'POST'
     })
     .then(res => res.json())
     .then(data => {
