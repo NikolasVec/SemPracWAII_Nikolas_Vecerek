@@ -162,6 +162,42 @@ table.table td, table.table th {
     display: inline-block;
 }
 
+/* Hide nav items and center logo on narrow screens (<=1100px) */
+@media (max-width: 1100px) {
+    /* Hide left/right navigation groups and the auth area */
+    .nav-left-group,
+    .nav-right-group,
+    .nav-auth-group {
+        display: none !important;
+        visibility: hidden !important;
+        width: 0 !important;
+        margin: 0 !important;
+        padding: 0 !important;
+    }
 
+    /* Center the brand/logo in the navbar */
+    .navbar .navbar-brand {
+        margin-left: 0 !important;
+        margin-right: 0 !important;
+        position: absolute;
+        left: 50%;
+        transform: translateX(-50%);
+    }
 
+    /* Ensure the hamburger stays on the left and above the logo */
+    .navbar > .btn {
+        position: relative;
+        z-index: 1060; /* above centered logo */
+    }
 
+    /* Slightly reduce logo size on smaller screens */
+    .logo-circle {
+        width: 80px;
+        height: 80px;
+    }
+
+    .logo-with-circle img {
+        width: 46px;
+        height: 46px;
+    }
+}

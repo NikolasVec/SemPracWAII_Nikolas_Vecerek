@@ -32,23 +32,27 @@
     </button>
 
     <div class="container-fluid d-flex justify-content-center align-items-center">
-        <div class="d-flex align-items-center" style="gap: 2rem; margin-left: 7vw;">
-            <!-- Ľavé tlačidlá -->
+        <!-- Ľavé tlačidlá (skryteľné na úzkom displeji) -->
+        <div class="d-flex align-items-center nav-left-group" style="gap: 2rem; margin-left: 7vw;">
             <a class="nav-link px-3" href="<?= $link->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
             <a class="nav-link px-3" href="<?= $link->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
-            <!-- Logo v strede -->
-            <a class="navbar-brand mx-4 logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
-                <span class="logo-circle"></span>
-                <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
-            </a>
-            <!-- Pravé tlačidlá -->
+        </div>
+
+        <!-- Logo v strede (vždy viditeľné) -->
+        <a class="navbar-brand mx-4 logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
+            <span class="logo-circle"></span>
+            <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
+        </a>
+
+        <!-- Pravé tlačidlá (skryteľné na úzkom displeji) -->
+        <div class="d-flex align-items-center nav-right-group" style="gap: 2rem; margin-right: 7vw;">
             <a class="nav-link px-3" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
             <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>"><strong>VÝHODNOTENIE</strong></a>
         </div>
     </div>
 
-    <!-- Úplne pravý kraj: Log in/Log out -->
-    <div class="d-flex align-items-center ms-3" style="min-width: 90px;">
+    <!-- Úplne pravý kraj: Log in/Log out (skryteľné na úzkom displeji) -->
+    <div class="d-flex align-items-center ms-3 nav-auth-group" style="min-width: 90px;">
         <?php if ($user->isLoggedIn()) { ?>
             <span class="navbar-text me-2"><?= $user->getName() ?></span>
             <a class="nav-link" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
