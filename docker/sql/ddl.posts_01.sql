@@ -12,6 +12,7 @@ DROP TABLE IF EXISTS posts;
 DROP TABLE IF EXISTS Bezec;
 DROP TABLE IF EXISTS Stanovisko;
 DROP TABLE IF EXISTS `rokKonania`;
+DROP TABLE IF EXISTS `Pouzivatelia`;
 
 -- Tabuľka rokKonania
 CREATE TABLE `rokKonania`
@@ -63,6 +64,20 @@ CREATE TABLE `Bezec`
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4;
 
+-- Tabuľka pre používateľov
+CREATE TABLE `Pouzivatelia` (
+    `ID_pouzivatela` INT NOT NULL AUTO_INCREMENT,
+    `meno` VARCHAR(50) NOT NULL,
+    `priezvisko` VARCHAR(50) NOT NULL,
+    `email` VARCHAR(100) NOT NULL UNIQUE,
+    `heslo` VARCHAR(255) NOT NULL,
+    `datum_narodenia` DATE NOT NULL,
+    `pohlavie` ENUM('M', 'Z') NOT NULL,
+    `zabehnute_kilometre` INT DEFAULT 0,
+    `vypite_piva` INT DEFAULT 0,
+    PRIMARY KEY (`ID_pouzivatela`)
+)  ENGINE=InnoDB
+   DEFAULT CHARSET = utf8mb4;
 
 SET foreign_key_checks = 1;
 
@@ -94,6 +109,10 @@ VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
          (6, 'Martin', 'Farkaš','M', 'farkas@gmail.com', 2025),
          (7, 'Zuzana', 'Mlynarčíková','Ž', 'mlynarová@gmail.com', 2023),
             (8, 'Tomáš', 'Kučera','M', 'kučora@gmail.com', 2023);
+
+-- Vloženie administrátora do tabuľky Pouzivatelia
+INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`)
+VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0);
 
 -- Trigger na automatickú aktualizáciu počtu účastníkov v rokKonania
 DELIMITER //

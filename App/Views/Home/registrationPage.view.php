@@ -10,7 +10,7 @@
         <div class="col-md-6">
             <div class="card registration-card shadow">
                 <div class="card-body">
-                    <h2 class="card-title text-center mb-4">Registrácia</h2>
+                    <h2 class="card-title text-center mb-4">Registrácia na beh</h2>
                     <?php
                     if (!empty($success)) {
                         echo '<div class="alert alert-success">' . htmlspecialchars($success) . '</div>';
