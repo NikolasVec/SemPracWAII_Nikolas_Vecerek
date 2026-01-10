@@ -21,6 +21,7 @@
             crossorigin="anonymous"></script>
     <link rel="stylesheet" href="<?= $link->asset('css/styl.css') ?>">
     <script src="<?= $link->asset('js/script.js') ?>"></script>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
 
@@ -47,15 +48,17 @@
         <!-- Pravé tlačidlá (skryteľné na úzkom displeji) -->
         <div class="d-flex align-items-center nav-right-group" style="gap: 2rem; margin-right: 7vw;">
             <a class="nav-link px-3" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
-            <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>"><strong>VÝHODNOTENIE</strong></a>
+            <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
         </div>
     </div>
 
     <!-- Úplne pravý kraj: Log in/Log out (skryteľné na úzkom displeji) -->
     <div class="d-flex align-items-center ms-3 nav-auth-group" style="min-width: 90px;">
         <?php if ($user->isLoggedIn()) { ?>
-            <span class="navbar-text me-2"><?= $user->getName() ?></span>
             <a class="nav-link" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+            <span class="navbar-text me-2">
+                <i class="bi bi-person fs-3"></i>
+            </span>
         <?php } else { ?>
             <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>"><strong>Log in</strong></a>
         <?php } ?>
@@ -73,7 +76,7 @@
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
-            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VÝHODNOTENIE</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
             <?php if ($user->isLoggedIn()) { ?>
                 <a class="list-group-item list-group-item-action" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
             <?php } else { ?>
