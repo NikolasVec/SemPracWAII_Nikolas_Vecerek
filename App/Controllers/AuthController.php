@@ -70,4 +70,54 @@ class AuthController extends BaseController
         $this->app->getAuthenticator()->logout();
         return $this->html();
     }
+
+    /**
+     * Displays the registration form for new users.
+     *
+     * This action renders the registration page where users can fill out their details to create a new account.
+     *
+     * @param Request $request The HTTP request object.
+     * @return ViewResponse The response object for rendering the registration page.
+     */
+    public function newUserRegistration(Request $request): ViewResponse
+    {
+        return $this->view('Auth/newUserRegistration');
+    }
+
+    /**
+     * Handles the registration of a new user.
+     *
+     * This action processes the registration form submission, validates the input,
+     * and inserts the new user into the database.
+     *
+     * @param Request $request The HTTP request object.
+     * @return Response The response object for redirecting or rendering a view.
+     */
+    public function registerUser(Request $request): Response
+    {
+        // Validate input
+        $firstName = $request->value('firstName');
+        $lastName = $request->value('lastName');
+        $email = $request->value('email');
+        $password = $request->value('password');
+        $birthDate = $request->value('birthDate');
+        $gender = $request->value('gender');
+
+        if (!$firstName || !$lastName || !$email || !$password || !$birthDate || !$gender) {
+            return $this->html(['message' => 'All fields are required.'], 'Auth/newUserRegistration');
+        }
+
+        // Hash the password
+        $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
+
+        // Insert user into the database
+        $db = $this->app->getDb();
+        $stmt = $db->prepare(
+            'INSERT INTO Pouzivatelia (meno, priezvisko, email, heslo, datum_narodenia, pohlavie) VALUES (?, ?, ?, ?, ?, ?)'
+        );
+        $stmt->execute([$firstName, $lastName, $email, $hashedPassword, $birthDate, $gender]);
+
+        // Redirect to the login page with a success message
+        return $this->redirect($this->url('auth.login', ['message' => 'Registration successful. You can now log in.']));
+    }
 }

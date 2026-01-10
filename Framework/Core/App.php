@@ -216,6 +216,27 @@ class App
     }
 
     /**
+     * Returns the database connection instance.
+     *
+     * This method provides access to the database connection, allowing controllers and other components
+     * to interact with the database.
+     *
+     * @return \Framework\DB\Connection The database connection instance.
+     */
+    public function getDb(): Connection
+    {
+        static $connection = null;
+
+        if ($connection === null) {
+            $pdo = new \PDO(Configuration::DB_DSN, Configuration::DB_USER, Configuration::DB_PASS);
+            $pdo->setAttribute(\PDO::ATTR_ERRMODE, \PDO::ERRMODE_EXCEPTION);
+            $connection = new Connection($pdo);
+        }
+
+        return $connection;
+    }
+
+    /**
      * Register a global PHP error handler that throws ErrorException for all non-suppressed errors.
      */
     private function registerErrorHandler(): void

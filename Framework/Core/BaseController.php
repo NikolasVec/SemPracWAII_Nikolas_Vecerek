@@ -196,4 +196,19 @@ abstract class BaseController
     ): string {
         return $this->app->getLinkGenerator()->url($destination, $parameters, $absolute, $appendParameters);
     }
+
+    /**
+     * Renders a view and returns a ViewResponse.
+     *
+     * This method simplifies the process of rendering views by providing a direct way to specify the view name
+     * and optional parameters to pass to the view.
+     *
+     * @param string $viewName The name of the view to render.
+     * @param array $params Optional parameters to pass to the view.
+     * @return ViewResponse The response object for rendering the view.
+     */
+    public function view(string $viewName, array $params = []): ViewResponse
+    {
+        return new ViewResponse($this->app, $viewName, $params);
+    }
 }

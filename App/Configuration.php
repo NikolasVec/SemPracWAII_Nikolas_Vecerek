@@ -33,6 +33,10 @@ class Configuration
     public const DB_NAME = 'vaiicko_db'; // Database name (defined in docker/.env)
     public const DB_USER = 'vaiicko_user'; // Username for database access (defined in docker/.env)
     public const DB_PASS = 'dtb456'; // Password for database access (defined in docker/.env)
+    /**
+     * Data Source Name (DSN) for the database connection.
+     */
+    public const DB_DSN = 'mysql:host=' . self::DB_HOST . ';dbname=' . self::DB_NAME . ';charset=utf8';
 
     /**
      * URL for the login page. Users will be redirected here if authentication is required for an action.

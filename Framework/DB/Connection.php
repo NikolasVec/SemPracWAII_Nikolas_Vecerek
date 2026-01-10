@@ -110,6 +110,9 @@ class Connection
      */
     public function __call(string $name, array $arguments): mixed
     {
+        if ($name === 'query' && isset($arguments[1]) && is_array($arguments[1])) {
+            throw new \InvalidArgumentException('Invalid fetch mode argument. Expected ?int, array given.');
+        }
         return $this->db->{$name}(...$arguments);
     }
 }

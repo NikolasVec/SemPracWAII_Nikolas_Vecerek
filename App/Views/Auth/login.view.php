@@ -33,6 +33,9 @@ $view->setLayout('auth');
                             </button>
                         </div>
                     </form>
+                    <div class="text-center mt-3">
+                        <a href="<?= $link->url('auth.newUserRegistration') ?>" class="btn btn-secondary">Zaregistruj sa</a>
+                    </div>
                 </div>
             </div>
         </div>
