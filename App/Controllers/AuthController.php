@@ -100,11 +100,16 @@ class AuthController extends BaseController
         $lastName = $request->value('lastName');
         $email = $request->value('email');
         $password = $request->value('password');
+        $confirmPassword = $request->value('confirmPassword');
         $birthDate = $request->value('birthDate');
         $gender = $request->value('gender');
 
-        if (!$firstName || !$lastName || !$email || !$password || !$birthDate || !$gender) {
+        if (!$firstName || !$lastName || !$email || !$password || !$confirmPassword || !$birthDate || !$gender) {
             return $this->html(['message' => 'All fields are required.'], 'Auth/newUserRegistration');
+        }
+
+        if ($password !== $confirmPassword) {
+            return $this->html(['message' => 'Passwords do not match.'], 'Auth/newUserRegistration');
         }
 
         // Hash the password

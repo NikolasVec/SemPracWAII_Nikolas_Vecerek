@@ -34,6 +34,11 @@ $view->setLayout('auth');
                         </div>
 
                         <div class="form-label-group mb-3">
+                            <label for="confirmPassword" class="form-label">Potvrďte heslo</label>
+                            <input name="confirmPassword" type="password" id="confirmPassword" class="form-control" placeholder="Potvrďte heslo" required>
+                        </div>
+
+                        <div class="form-label-group mb-3">
                             <label for="birthDate" class="form-label">Dátum narodenia</label>
                             <input name="birthDate" type="date" id="birthDate" class="form-control" required>
                         </div>
@@ -55,3 +60,5 @@ $view->setLayout('auth');
         </div>
     </div>
 </div>
+
+<script src="/js/script.js"></script>

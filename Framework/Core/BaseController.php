@@ -139,10 +139,8 @@ abstract class BaseController
         if ($viewName == null) {
             $viewName = $this->app->getRouter()->getControllerName() . DIRECTORY_SEPARATOR .
                 $this->app->getRouter()->getAction();
-        } else {
-            $viewName = is_string($viewName) ?
-                ($this->app->getRouter()->getControllerName() . DIRECTORY_SEPARATOR . $viewName) :
-                ($viewName['0'] . DIRECTORY_SEPARATOR . $viewName['1']);
+        } elseif (!str_starts_with($viewName, $this->app->getRouter()->getControllerName() . DIRECTORY_SEPARATOR)) {
+            $viewName = $this->app->getRouter()->getControllerName() . DIRECTORY_SEPARATOR . $viewName;
         }
         return new ViewResponse($this->app, $viewName, $data);
     }
@@ -209,6 +207,9 @@ abstract class BaseController
      */
     public function view(string $viewName, array $params = []): ViewResponse
     {
-        return new ViewResponse($this->app, $viewName, $params);
+        // Normalize the view name to prevent duplication of directories
+        $normalizedViewName = preg_replace('#/+#', '/', $viewName);
+
+        return new ViewResponse($this->app, $normalizedViewName, $params);
     }
 }
