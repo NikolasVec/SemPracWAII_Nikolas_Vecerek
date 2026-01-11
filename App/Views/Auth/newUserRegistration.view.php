@@ -12,6 +12,13 @@ $view->setLayout('auth');
             <div class="card card-signin my-5">
                 <div class="card-body">
                     <h5 class="card-title text-center">Registrácia</h5>
+
+                    <?php if (isset($message)): ?>
+                    <div class="alert alert-danger" role="alert">
+                        <?= htmlspecialchars($message) ?>
+                    </div>
+                    <?php endif; ?>
+
                     <form class="form-signin" method="post" action="<?= $link->url('auth.registerUser') ?>">
                         <div class="form-label-group mb-3">
                             <label for="firstName" class="form-label">Meno</label>

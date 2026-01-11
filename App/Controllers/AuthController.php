@@ -109,7 +109,7 @@ class AuthController extends BaseController
         }
 
         if ($password !== $confirmPassword) {
-            return $this->html(['message' => 'Passwords do not match.'], 'Auth/newUserRegistration');
+            return $this->html(['message' => 'Passwords do not match. Please try again.'], 'Auth/newUserRegistration');
         }
 
         // Hash the password
