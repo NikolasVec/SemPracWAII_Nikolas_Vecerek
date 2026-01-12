@@ -28,7 +28,8 @@ class AdminController extends BaseController
      */
     public function authorize(Request $request, string $action): bool
     {
-        return $this->user->isLoggedIn();
+        // Only allow access to admin controller for logged-in users with admin privileges.
+        return $this->user->isLoggedIn() && $this->user->isAdmin();
     }
 
     /**

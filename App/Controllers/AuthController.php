@@ -47,13 +47,20 @@ class AuthController extends BaseController
     {
         $logged = null;
         if ($request->hasValue('submit')) {
-            $logged = $this->app->getAuthenticator()->login($request->value('username'), $request->value('password'));
+            // Read email from form (input name changed to 'email')
+            $email = $request->value('email');
+            $logged = $this->app->getAuthenticator()->login($email, $request->value('password'));
             if ($logged) {
-                return $this->redirect($this->url("admin.index"));
+                // Redirect admins to admin dashboard, non-admins to homepage
+                $appUser = $this->app->getAuthenticator()->getUser();
+                if ($appUser->isAdmin()) {
+                    return $this->redirect($this->url("admin.index"));
+                }
+                return $this->redirect($this->url("home.index"));
             }
         }
 
-        $message = $logged === false ? 'Bad username or password' : null;
+        $message = $logged === false ? 'Nesprávny e-mail alebo heslo' : null;
         return $this->html(compact("message"));
     }
 
@@ -105,7 +112,7 @@ class AuthController extends BaseController
         $gender = $request->value('gender');
 
         if (!$firstName || !$lastName || !$email || !$password || !$confirmPassword || !$birthDate || !$gender) {
-            return $this->html(['message' => 'All fields are required.'], 'Auth/newUserRegistration');
+            return $this->html(['message' => 'Všetky polia sú povinné.'], 'Auth/newUserRegistration');
         }
 
         if ($password !== $confirmPassword) {

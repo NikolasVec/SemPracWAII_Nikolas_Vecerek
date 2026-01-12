@@ -110,14 +110,20 @@ class App
                         $this->router->getAction() . "didn't return an instance of Response.");
                 }
             } else {
-                // If authorization fails, check if the user is logged in or redirect to the login page.
-                if (($this->auth?->getUser()?->isLoggedIn()) || !defined('\\App\\Configuration::LOGIN_URL')) {
-                    throw new HttpException(403); // Forbidden access
-                } else {
+                // If authorization fails, handle three cases:
+                // 1) User is logged in but not authorized -> redirect to home page
+                // 2) User not logged in and LOGIN_URL defined -> redirect to login page
+                // 3) No LOGIN_URL defined -> throw 403
+                if ($this->auth?->getUser()?->isLoggedIn()) {
+                    // logged-in but not authorized -> send them to the public homepage
+                    (new RedirectResponse($this->linkGenerator->url('home.index')))->send();
+                } elseif (defined('\\App\\Configuration::LOGIN_URL')) {
                     (new RedirectResponse(Configuration::LOGIN_URL))->send();
+                } else {
+                    throw new HttpException(403); // Forbidden access
                 }
-            }
-        } catch (\Throwable $exception) {
+             }
+         } catch (\Throwable $exception) {
             // Clear any partially rendered output.
             ob_end_clean();
 

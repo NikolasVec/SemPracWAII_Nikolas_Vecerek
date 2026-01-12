@@ -109,4 +109,18 @@ class HomeController extends BaseController
     {
         return $this->html();
     }
+
+    /**
+     * Displays the user profile page for the currently logged-in user.
+     * Requires the user to be logged in; otherwise redirects to the login page.
+     */
+    public function profile(Request $request): Response
+    {
+        if (!$this->user->isLoggedIn()) {
+            return $this->redirect(\App\Configuration::LOGIN_URL);
+        }
+
+        $identity = $this->user->getIdentity();
+        return $this->html(compact('identity'));
+    }
 }

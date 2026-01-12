@@ -55,10 +55,18 @@
     <!-- Úplne pravý kraj: Log in/Log out (skryteľné na úzkom displeji) -->
     <div class="d-flex align-items-center ms-3 nav-auth-group" style="min-width: 90px;">
         <?php if ($user->isLoggedIn()) { ?>
-            <a class="nav-link" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
-            <span class="navbar-text me-2">
-                <i class="bi bi-person fs-3"></i>
-            </span>
+            <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
+                <!-- Admins: show Log out in navbar and icon leading to admin dashboard -->
+                <a class="nav-link" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+                <a class="nav-link navbar-text me-2" href="<?= $link->url('admin.index') ?>" title="Admin">
+                    <i class="bi bi-person fs-3"></i>
+                </a>
+            <?php } else { ?>
+                <!-- Non-admins: do not show Log out in navbar; icon links to profile page -->
+                <a class="nav-link navbar-text me-2" href="<?= $link->url('home.profile') ?>" title="Môj profil">
+                    <i class="bi bi-person fs-3"></i>
+                </a>
+            <?php } ?>
         <?php } else { ?>
             <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>"><strong>Log in</strong></a>
         <?php } ?>
@@ -78,7 +86,12 @@
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
             <?php if ($user->isLoggedIn()) { ?>
-                <a class="list-group-item list-group-item-action" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+                <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
+                    <a class="list-group-item list-group-item-action" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+                <?php } else { ?>
+                    <!-- Non-admins: provide link to profile in offcanvas; logout available on profile page -->
+                    <a class="list-group-item list-group-item-action" href="<?= $link->url('home.profile') ?>"><strong>Môj profil</strong></a>
+                <?php } ?>
             <?php } else { ?>
                 <a class="list-group-item list-group-item-action" href="<?= App\Configuration::LOGIN_URL ?>"><strong>Log in</strong></a>
             <?php } ?>
