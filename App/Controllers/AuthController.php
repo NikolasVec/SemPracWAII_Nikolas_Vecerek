@@ -109,7 +109,7 @@ class AuthController extends BaseController
         }
 
         if ($password !== $confirmPassword) {
-            return $this->html(['message' => 'Passwords do not match. Please try again.'], 'Auth/newUserRegistration');
+            return $this->html(['message' => 'Heslo sa nezhoduje. Skúste to znova.'], 'Auth/newUserRegistration');
         }
 
         // Hash the password
@@ -122,7 +122,20 @@ class AuthController extends BaseController
         );
         $stmt->execute([$firstName, $lastName, $email, $hashedPassword, $birthDate, $gender]);
 
-        // Redirect to the login page with a success message
-        return $this->redirect($this->url('auth.login', ['message' => 'Registration successful. You can now log in.']));
+        // Redirect to the success registration page after successful registration
+        return $this->redirect($this->url('auth.successRegistration'));
+    }
+
+    /**
+     * Displays the success registration page.
+     *
+     * This action renders the success registration view to notify the user of successful registration.
+     *
+     * @param Request $request The HTTP request object.
+     * @return ViewResponse The response object for rendering the success registration page.
+     */
+    public function successRegistration(Request $request): ViewResponse
+    {
+        return $this->view('Auth/successRegistration');
     }
 }
