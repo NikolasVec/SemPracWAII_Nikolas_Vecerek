@@ -11,9 +11,9 @@ use Framework\Http\Session;
 abstract class SessionAuthenticator implements IAuthenticator
 {
     // Application instance
-    private App $app;
+    protected App $app;
     // Session management instance
-    private Session $session;
+    protected Session $session;
 
     /**
      * SessionAuthenticator constructor.
@@ -28,7 +28,7 @@ abstract class SessionAuthenticator implements IAuthenticator
 
     /**
      * Abstract method to authenticate a user based on provided username and password.
-     * 
+     *
      * This method must be implemented by subclasses to provide the actual authentication logic.
      *
      * @param string $username User's login attempt.

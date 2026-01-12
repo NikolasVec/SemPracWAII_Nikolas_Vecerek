@@ -75,6 +75,7 @@ CREATE TABLE `Pouzivatelia` (
     `pohlavie` ENUM('M', 'Z') NOT NULL,
     `zabehnute_kilometre` INT DEFAULT 0,
     `vypite_piva` INT DEFAULT 0,
+    `admin` BOOLEAN NOT NULL DEFAULT 0,
     PRIMARY KEY (`ID_pouzivatela`)
 )  ENGINE=InnoDB
    DEFAULT CHARSET = utf8mb4;
@@ -111,8 +112,8 @@ VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
             (8, 'Tomáš', 'Kučera','M', 'kučora@gmail.com', 2023);
 
 -- Vloženie administrátora do tabuľky Pouzivatelia
-INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`)
-VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0);
+INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`, `admin`)
+VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0, 1);
 
 -- Trigger na automatickú aktualizáciu počtu účastníkov v rokKonania
 DELIMITER //
