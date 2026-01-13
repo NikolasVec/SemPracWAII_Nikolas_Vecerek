@@ -38,6 +38,8 @@ $view->setLayout('auth');
                         <div class="form-label-group mb-3">
                             <label for="password" class="form-label">Heslo</label>
                             <input name="password" type="password" id="password" class="form-control" placeholder="Heslo" required>
+                            <small class="form-text text-muted">Heslo musí obsahovať minimálne 5 písmen a aspoň jedno číslo.</small>
+                            <div id="passwordError" class="text-danger small mt-1" style="display:none"></div>
                         </div>
 
                         <div class="form-label-group mb-3">
@@ -69,3 +71,45 @@ $view->setLayout('auth');
 </div>
 
 <script src="/js/script.js"></script>
+<script>
+    (function(){
+        var form = document.querySelector('form.form-signin');
+        if (!form) return;
+        var pwInput = document.getElementById('password');
+        var confirmInput = document.getElementById('confirmPassword');
+        var pwError = document.getElementById('passwordError');
+
+        form.addEventListener('submit', function(e){
+            var pw = pwInput.value || '';
+            var conf = confirmInput.value || '';
+
+            if (pw !== conf) {
+                pwError.textContent = 'Heslo sa nezhoduje. Skúste to znova.';
+                pwError.style.display = 'block';
+                e.preventDefault();
+                return;
+            }
+
+            // Count letters using Unicode property if available, fallback to ASCII letters
+            var lettersCount = 0;
+            try {
+                var letters = pw.match(/\p{L}/gu);
+                lettersCount = letters ? letters.length : 0;
+            } catch (err) {
+                var letters = pw.match(/[A-Za-z]/g);
+                lettersCount = letters ? letters.length : 0;
+            }
+            var hasDigit = /\d/.test(pw);
+
+            if (lettersCount < 5 || !hasDigit) {
+                pwError.textContent = 'Heslo musí obsahovať minimálne 5 písmen a aspoň jedno číslo.';
+                pwError.style.display = 'block';
+                e.preventDefault();
+                return;
+            }
+
+            // clear previous error
+            pwError.style.display = 'none';
+        });
+    })();
+</script>

@@ -119,6 +119,42 @@ class AuthController extends BaseController
             return $this->html(['message' => 'Heslo sa nezhoduje. Skúste to znova.'], 'Auth/newUserRegistration');
         }
 
+        // Require password to contain at least 5 letters and at least one digit
+        // Count letters using preg_match_all for Unicode letters, fallback to extended Latin range
+        $lettersCount = @preg_match_all('/\p{L}/u', $password);
+        if ($lettersCount === false) {
+            // fallback to extended Latin (covers Slovak diacritics)
+            $lettersCount = preg_match_all('/[A-Za-zÀ-ž]/u', $password);
+        }
+        // Try Unicode digit category first (matches digits from other scripts), fallback to \d
+        $hasDigit = @preg_match('/\p{Nd}/u', $password);
+        if ($hasDigit === false) {
+            $hasDigit = preg_match('/\\d/', $password);
+        }
+        if ($lettersCount === false || $lettersCount < 5 || !$hasDigit) {
+            // provide small, non-sensitive diagnostics to help debugging: number of letters and digit present
+            $digitText = $hasDigit ? 'áno' : 'nie';
+            $diag = " (písmen: " . ($lettersCount === false ? 'chyba' : $lettersCount) . ", číslo: " . $digitText . ")";
+            return $this->html(['message' => 'Heslo musí obsahovať minimálne 5 písmen a aspoň jedno číslo.' . $diag], 'Auth/newUserRegistration');
+        }
+
+        // Validate email format
+        if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+            return $this->html(['message' => 'Zadaný email nemá správny formát.'], 'Auth/newUserRegistration');
+        }
+
+        // Normalize email for comparison
+        $emailNormalized = trim(strtolower((string)$email));
+
+        // Check if email is already registered
+        $db = $this->app->getDb();
+        $stmtCheck = $db->prepare('SELECT COUNT(*) AS cnt FROM Pouzivatelia WHERE LOWER(email) = ?');
+        $stmtCheck->execute([$emailNormalized]);
+        $countRow = $stmtCheck->fetch();
+        if ($countRow && (int)$countRow['cnt'] > 0) {
+            return $this->html(['message' => 'Na tento email už existuje registrácia. Zvoľte iný email alebo sa prihláste.'], 'Auth/newUserRegistration');
+        }
+
         // Hash the password
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
@@ -127,7 +163,17 @@ class AuthController extends BaseController
         $stmt = $db->prepare(
             'INSERT INTO Pouzivatelia (meno, priezvisko, email, heslo, datum_narodenia, pohlavie) VALUES (?, ?, ?, ?, ?, ?)'
         );
-        $stmt->execute([$firstName, $lastName, $email, $hashedPassword, $birthDate, $gender]);
+        try {
+            $stmt->execute([$firstName, $lastName, $email, $hashedPassword, $birthDate, $gender]);
+        } catch (\PDOException $e) {
+            // Handle duplicate email race condition (unique constraint) and other DB errors
+            $sqlState = $e->getCode();
+            if ($sqlState === '23000' || str_contains($e->getMessage(), 'Duplicate')) {
+                return $this->html(['message' => 'Tento email už existuje v našej databáze. Zvoľte iný email alebo sa prihláste.'], 'Auth/newUserRegistration');
+            }
+            // Re-throw unexpected DB errors
+            throw $e;
+        }
 
         // Redirect to the success registration page after successful registration
         return $this->redirect($this->url('auth.successRegistration'));
