@@ -21,7 +21,7 @@
                     if (!empty($bezci)) {
                         $cols = array_filter(array_keys($bezci[0]), 'is_string');
                         foreach($cols as $col): ?>
-                            <th><?= htmlspecialchars($col) ?></th>
+                            <th><?= htmlspecialchars((string)$col) ?></th>
                         <?php endforeach;
                     }
                     ?>
@@ -31,7 +31,7 @@
                 <?php foreach ($bezci as $bezc): ?>
                     <tr>
                         <?php foreach ($cols as $col): ?>
-                            <td><?= htmlspecialchars($bezc[$col]) ?></td>
+                            <td><?= htmlspecialchars((string)($bezc[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
                     </tr>
                 <?php endforeach; ?>
@@ -52,9 +52,12 @@
                     if (!empty($roky)) {
                         $colsRoky = array_filter(array_keys($roky[0]), 'is_string');
                         foreach($colsRoky as $col): ?>
-                            <th><?= htmlspecialchars($col) ?></th>
+                            <th><?= htmlspecialchars((string)$col) ?></th>
                         <?php endforeach;
-                    }
+                        // add actions header
+                        ?>
+                        <th>Akcie</th>
+                    <?php }
                     ?>
                 </tr>
                 </thead>
@@ -62,8 +65,17 @@
                 <?php foreach ($roky as $rok): ?>
                     <tr>
                         <?php foreach ($colsRoky as $col): ?>
-                            <td><?= htmlspecialchars($rok[$col]) ?></td>
+                            <td><?= htmlspecialchars((string)($rok[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
+                        <!-- actions: set/clear results year -->
+                        <td>
+                            <?php if (!empty($currentResultsYear) && (string)$currentResultsYear === (string)($rok['ID_roka'] ?? '')): ?>
+                                <span class="badge bg-success">Aktuálne</span>
+                                <button type="button" class="btn btn-sm btn-secondary ms-2" onclick="clearResultsYear()">Zrušiť</button>
+                            <?php else: ?>
+                                <button type="button" class="btn btn-sm btn-primary" onclick="setResultsYear(<?= htmlspecialchars((string)($rok['ID_roka'] ?? '')) ?>)">Nastaviť ako výsledkový rok</button>
+                            <?php endif; ?>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -83,7 +95,7 @@
                     if (!empty($stanoviska)) {
                         $colsStan = array_filter(array_keys($stanoviska[0]), 'is_string');
                         foreach($colsStan as $col): ?>
-                            <th><?= htmlspecialchars($col) ?></th>
+                            <th><?= htmlspecialchars((string)$col) ?></th>
                         <?php endforeach;
                     }
                     ?>
@@ -93,7 +105,7 @@
                 <?php foreach ($stanoviska as $stan): ?>
                     <tr>
                         <?php foreach ($colsStan as $col): ?>
-                            <td><?= htmlspecialchars($stan[$col]) ?></td>
+                            <td><?= htmlspecialchars((string)($stan[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
                     </tr>
                 <?php endforeach; ?>
@@ -203,6 +215,7 @@ const formFields = {
         {name: 'priezvisko', label: 'Priezvisko', type: 'text', required: true},
         {name: 'email', label: 'Email', type: 'email', required: true},
         {name: 'pohlavie', label: 'Pohlavie', type: 'select', options: ['M', 'Ž'], required: true},
+        {name: 'cas_dobehnutia', label: 'Čas dobehnutia', type: 'time', required: false, step: 1},
         {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
     ],
     roky: [
@@ -235,7 +248,8 @@ function openAddModal(section) {
         } else if (field.type === 'textarea') {
             html += `<textarea class="form-control" name="${field.name}" ${field.required ? 'required' : ''}></textarea>`;
         } else {
-            html += `<input class="form-control" type="${field.type}" name="${field.name}" ${field.required ? 'required' : ''}>`;
+            // include step attribute when provided (used for time inputs to allow seconds)
+            html += `<input class="form-control" type="${field.type}" name="${field.name}" ${field.required ? 'required' : ''}${field.step ? ' step="' + field.step + '"' : ''}>`;
         }
         html += `</div>`;
     });
@@ -324,8 +338,7 @@ document.getElementById('deleteForm').onsubmit = function(e) {
 const editButtons = document.querySelectorAll('.btn-warning[data-section]');
 editButtons.forEach((btn) => {
     btn.onclick = function() {
-        let section = btn.getAttribute('data-section');
-        window.currentEditSection = section;
+        window.currentEditSection = btn.getAttribute('data-section');
         document.getElementById('editId').value = '';
         var modal = new bootstrap.Modal(document.getElementById('editIdModal'));
         modal.show();
@@ -351,13 +364,14 @@ document.getElementById('editIdForm').onsubmit = function(e) {
                 if (field.type === 'select') {
                     html += `<select class="form-select" name="${field.name}" required>`;
                     field.options.forEach(opt => {
-                        html += `<option value="${opt}"${opt==value?' selected':''}>${opt}</option>`;
+                        html += `<option value="${opt}"${opt===value? ' selected' : ''}>${opt}</option>`;
                     });
                     html += `</select>`;
                 } else if (field.type === 'textarea') {
                     html += `<textarea class="form-control" name="${field.name}" ${field.required ? 'required' : ''}>${value}</textarea>`;
                 } else {
-                    html += `<input class="form-control" type="${field.type}" name="${field.name}" value="${value}" ${field.required ? 'required' : ''}>`;
+                    // include step attribute when provided (used for time inputs to allow seconds)
+                    html += `<input class="form-control" type="${field.type}" name="${field.name}" value="${value}" ${field.required ? 'required' : ''}${field.step ? ' step="' + field.step + '"' : ''}>`;
                 }
                 html += `</div>`;
             });
@@ -390,5 +404,43 @@ document.getElementById('editForm').onsubmit = function(e) {
         }
     })
     .catch(() => alert('Chyba pri ukladaní zmien.'));
-};
+}
+
+// add setResultsYear JS functions near the end of the script
+
+function setResultsYear(id) {
+    if (!confirm('Nastaviť rok s ID ' + id + ' ako výsledkový rok?')) return;
+    fetch(`/?c=Admin&a=setResultsYear`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'id=' + encodeURIComponent(id)
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+}
+
+function clearResultsYear() {
+    if (!confirm('Naozaj zrušiť vybraný výsledkový rok?')) return;
+    fetch(`/?c=Admin&a=setResultsYear`, {
+        method: 'POST',
+        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+        body: 'id=' // empty to clear
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+}
 </script>

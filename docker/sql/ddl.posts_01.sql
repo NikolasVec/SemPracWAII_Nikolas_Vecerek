@@ -20,7 +20,7 @@ CREATE TABLE `rokKonania`
     `ID_roka` INT NOT NULL AUTO_INCREMENT,
     `rok` INT NOT NULL,
     `datum_konania` DATE NOT NULL,
-    `pocet_ucastnikov` INT NOT NULL,
+    `pocet_ucastnikov` INT NOT NULL DEFAULT 0,
     PRIMARY KEY (`ID_roka`)
 ) ENGINE = InnoDB
   DEFAULT CHARSET = utf8mb4;
@@ -55,6 +55,7 @@ CREATE TABLE `Bezec`
     `priezvisko` VARCHAR(50) NOT NULL,
     `email` VARCHAR(100) NOT NULL,
     `pohlavie` ENUM('M', 'Ž') NOT NULL,
+    `cas_dobehnutia` TIME DEFAULT NULL,
     `ID_roka` INT NOT NULL,
     PRIMARY KEY (`ID_bezca`),
     CONSTRAINT `fk_bezec_rok`

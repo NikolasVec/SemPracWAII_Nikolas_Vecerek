@@ -15,7 +15,7 @@ $view->setLayout('auth');
 
                     <?php if (isset($message)): ?>
                     <div class="alert alert-danger" role="alert">
-                        <?= htmlspecialchars($message) ?>
+                        <?= htmlspecialchars((string)($message ?? '')) ?>
                     </div>
                     <?php endif; ?>
 
@@ -91,12 +91,13 @@ $view->setLayout('auth');
             }
 
             // Count letters using Unicode property if available, fallback to ASCII letters
-            var lettersCount = 0;
+            let lettersCount;
+            let letters;
             try {
-                var letters = pw.match(/\p{L}/gu);
+                letters = pw.match(/\p{L}/gu);
                 lettersCount = letters ? letters.length : 0;
             } catch (err) {
-                var letters = pw.match(/[A-Za-z]/g);
+                letters = pw.match(/[A-Za-z]/g);
                 lettersCount = letters ? letters.length : 0;
             }
             var hasDigit = /\d/.test(pw);

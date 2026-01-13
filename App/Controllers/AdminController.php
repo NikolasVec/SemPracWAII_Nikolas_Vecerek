@@ -46,10 +46,30 @@ class AdminController extends BaseController
         $roky = $conn->query('SELECT * FROM rokKonania')->fetchAll();
         $stanoviska = $conn->query('SELECT * FROM Stanovisko')->fetchAll();
 
+        // Try to load currently selected year for results from settings table (if exists)
+        $currentResultsYear = null;
+        try {
+            // ensure settings table may not exist; select safely
+            $stmt = $conn->query("SHOW TABLES LIKE 'settings'");
+            $tableExists = $stmt->fetchColumn() !== false;
+            if ($tableExists) {
+                $s = $conn->prepare('SELECT v FROM settings WHERE k = ? LIMIT 1');
+                $s->execute(['results_year']);
+                $val = $s->fetchColumn();
+                if ($val !== false && $val !== null && $val !== '') {
+                    $currentResultsYear = $val;
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore - settings table may not exist
+            $currentResultsYear = null;
+        }
+
         return $this->html([
             'bezci' => $bezci,
             'roky' => $roky,
-            'stanoviska' => $stanoviska
+            'stanoviska' => $stanoviska,
+            'currentResultsYear' => $currentResultsYear
         ]);
     }
 
@@ -78,13 +98,28 @@ class AdminController extends BaseController
                 $email = trim($_POST['email'] ?? '');
                 $pohlavie = trim($_POST['pohlavie'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
+                $cas = trim($_POST['cas_dobehnutia'] ?? '');
+
+                // Normalize time: accept H:MM or H:MM:SS and convert to HH:MM:SS; empty -> null
+                if ($cas === '') {
+                    $casTime = null;
+                } else {
+                    if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $cas, $m)) {
+                        $h = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                        $i = $m[2];
+                        $s = isset($m[3]) ? $m[3] : '00';
+                        $casTime = "$h:$i:$s";
+                    } else {
+                        return $this->json(['success' => false, 'message' => 'Neplatný formát času (očakávané H:MM alebo H:MM:SS).']);
+                    }
+                }
 
                 if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '' || !$ID_roka) {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
 
-                $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
-                $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $ID_roka]);
+                $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, cas_dobehnutia, ID_roka) VALUES (?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $casTime, $ID_roka]);
 
                 // update participant count for the year
                 $count = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE ID_roka = ?');
@@ -229,13 +264,27 @@ class AdminController extends BaseController
                 $email = trim($_POST['email'] ?? '');
                 $pohlavie = trim($_POST['pohlavie'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
+                $cas = trim($_POST['cas_dobehnutia'] ?? '');
+
+                if ($cas === '') {
+                    $casTime = null;
+                } else {
+                    if (preg_match('/^(\d{1,2}):(\d{2})(?::(\d{2}))?$/', $cas, $m)) {
+                        $h = str_pad($m[1], 2, '0', STR_PAD_LEFT);
+                        $i = $m[2];
+                        $s = isset($m[3]) ? $m[3] : '00';
+                        $casTime = "$h:$i:$s";
+                    } else {
+                        return $this->json(['success' => false, 'message' => 'Neplatný formát času (očakávané H:MM alebo H:MM:SS).']);
+                    }
+                }
 
                 if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '' || !$ID_roka) {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
 
-                $stmt = $conn->prepare('UPDATE Bezec SET meno=?, priezvisko=?, email=?, pohlavie=?, ID_roka=? WHERE ID_bezca=?');
-                $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $ID_roka, $id]);
+                $stmt = $conn->prepare('UPDATE Bezec SET meno=?, priezvisko=?, email=?, pohlavie=?, cas_dobehnutia=?, ID_roka=? WHERE ID_bezca=?');
+                $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $casTime, $ID_roka, $id]);
 
                 // update participant counts for affected years (simple approach: update the target year)
                 $count = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE ID_roka = ?');
@@ -270,6 +319,40 @@ class AdminController extends BaseController
 
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+            }
+
+            return $this->json(['success' => true]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    // New action to set which year is used on the public results page
+    public function setResultsYear(Request $request): Response
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
+        }
+
+        $id = $_POST['id'] ?? null; // ID_roka or empty to clear
+        try {
+            $conn = Connection::getInstance();
+            // create settings table if not exists
+            $conn->exec("CREATE TABLE IF NOT EXISTS settings (k VARCHAR(64) PRIMARY KEY, v VARCHAR(255) NULL)");
+
+            if ($id === null || $id === '') {
+                // remove the setting
+                $stmt = $conn->prepare('DELETE FROM settings WHERE k = ?');
+                $stmt->execute(['results_year']);
+            } else {
+                // upsert setting
+                // Try update first
+                $u = $conn->prepare('UPDATE settings SET v = ? WHERE k = ?');
+                $u->execute([$id, 'results_year']);
+                if ($u->rowCount() === 0) {
+                    $i = $conn->prepare('INSERT INTO settings (k, v) VALUES (?, ?)');
+                    $i->execute(['results_year', $id]);
+                }
             }
 
             return $this->json(['success' => true]);

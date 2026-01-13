@@ -107,7 +107,55 @@ class HomeController extends BaseController
     }
     public function resultsPage(Request $request): Response
     {
-        return $this->html();
+        $conn = \Framework\DB\Connection::getInstance();
+        $resultsYear = null;
+        try {
+            $stmt = $conn->query("SHOW TABLES LIKE 'settings'");
+            $tableExists = $stmt->fetchColumn() !== false;
+            if ($tableExists) {
+                $s = $conn->prepare('SELECT v FROM settings WHERE k = ? LIMIT 1');
+                $s->execute(['results_year']);
+                $val = $s->fetchColumn();
+                if ($val !== false && $val !== null && $val !== '') {
+                    $resultsYear = $val;
+                }
+            }
+        } catch (\Throwable $e) {
+            $resultsYear = null;
+        }
+
+        $maleResults = [];
+        $femaleResults = [];
+        $resultsYearLabel = null;
+
+        if ($resultsYear !== null) {
+            // fetch human-readable year value from rokKonania
+            try {
+                $sr = $conn->prepare('SELECT rok FROM rokKonania WHERE ID_roka = ? LIMIT 1');
+                $sr->execute([$resultsYear]);
+                $row = $sr->fetch();
+                if ($row && isset($row['rok'])) {
+                    $resultsYearLabel = $row['rok'];
+                }
+            } catch (\Throwable $e) {
+                $resultsYearLabel = $resultsYear; // fallback to ID
+            }
+
+            $stmtM = $conn->prepare('SELECT meno, priezvisko, cas_dobehnutia FROM Bezec WHERE pohlavie = ? AND ID_roka = ? ORDER BY (cas_dobehnutia IS NULL), cas_dobehnutia ASC');
+            $stmtM->execute(['M', $resultsYear]);
+            $maleResults = $stmtM->fetchAll();
+
+            $stmtF = $conn->prepare('SELECT meno, priezvisko, cas_dobehnutia FROM Bezec WHERE pohlavie = ? AND ID_roka = ? ORDER BY (cas_dobehnutia IS NULL), cas_dobehnutia ASC');
+            $stmtF->execute(['Ž', $resultsYear]);
+            $femaleResults = $stmtF->fetchAll();
+        }
+
+        return $this->html([
+            'maleResults' => $maleResults,
+            'femaleResults' => $femaleResults,
+            'resultsYear' => $resultsYear,
+            'resultsYearLabel' => $resultsYearLabel
+        ]);
     }
 
     /**
