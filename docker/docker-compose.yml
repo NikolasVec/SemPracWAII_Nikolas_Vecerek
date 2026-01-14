@@ -6,6 +6,7 @@ services:
       - APACHE_DOCUMENT_ROOT=/var/www/html/public
     volumes:
       - ./../:/var/www/html/
+      - ./php-upload.ini:/usr/local/etc/php/conf.d/php-upload.ini:ro
     ports:
       - "127.0.0.1:80:80"
     stdin_open: true

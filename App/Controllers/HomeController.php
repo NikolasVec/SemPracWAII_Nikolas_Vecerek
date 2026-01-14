@@ -3,6 +3,7 @@
 namespace App\Controllers;
 
 use Framework\Core\BaseController;
+use Framework\DB\Connection;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 
@@ -56,7 +57,30 @@ class HomeController extends BaseController
     }
     public function galleryPage(Request $request): Response
     {
-        return $this->html();
+        $conn = Connection::getInstance();
+        $albums = [];
+        try {
+            $stmt = $conn->query("SHOW TABLES LIKE 'albums'");
+            $tableExists = $stmt->fetchColumn() !== false;
+            if ($tableExists) {
+                $stmtA = $conn->query('SELECT * FROM albums ORDER BY created_at DESC');
+                $rows = $stmtA->fetchAll();
+                foreach ($rows as $row) {
+                    $stmtP = $conn->prepare('SELECT * FROM photos WHERE album_id = ? ORDER BY created_at ASC');
+                    $stmtP->execute([$row['ID_album']]);
+                    $photos = $stmtP->fetchAll();
+                    $albums[] = [
+                        'album' => $row,
+                        'photos' => $photos
+                    ];
+                }
+            }
+        } catch (\Throwable $e) {
+            // ignore DB errors and show empty gallery
+            $albums = [];
+        }
+
+        return $this->html(['albums' => $albums]);
     }
     public function registrationPage(Request $request): Response
     {

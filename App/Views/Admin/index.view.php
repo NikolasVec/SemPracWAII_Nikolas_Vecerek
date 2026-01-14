@@ -117,6 +117,43 @@
                 <button class="btn btn-warning" data-section="stanoviska">Upraviť</button>
                 <button class="btn btn-danger" data-section="stanoviska">Vymazať</button>
             </div>
+
+            <h3>Galéria (albumy)</h3>
+            <div class="mb-3">
+                <button class="btn btn-success" onclick="openCreateAlbumModal()">Vytvoriť album</button>
+            </div>
+            <div class="table-scroll-wrapper">
+                <table class="table table-bordered table-striped">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>Názov</th>
+                            <th>Popis</th>
+                            <th>Vytvorené</th>
+                            <th>Akcie</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <?php if (!empty($albums)): ?>
+                            <?php foreach ($albums as $alb): ?>
+                                <tr>
+                                    <td><?= htmlspecialchars((string)($alb['ID_album'] ?? $alb['album']['ID_album'] ?? '')) ?></td>
+                                    <td><?= htmlspecialchars((string)($alb['name'] ?? $alb['album']['name'] ?? '')) ?></td>
+                                    <td><?= htmlspecialchars((string)($alb['description'] ?? $alb['album']['description'] ?? '')) ?></td>
+                                    <td><?= htmlspecialchars((string)($alb['created_at'] ?? $alb['album']['created_at'] ?? '')) ?></td>
+                                    <td>
+                                        <button class="btn btn-sm btn-secondary me-1" onclick="openPhotosModal(<?= htmlspecialchars((string)($alb['ID_album'] ?? $alb['album']['ID_album'] ?? '')) ?>)">Zobraziť fotky</button>
+                                        <button class="btn btn-sm btn-primary me-1" onclick="openUploadModal(<?= htmlspecialchars((string)($alb['ID_album'] ?? $alb['album']['ID_album'] ?? '')) ?>)">Nahráť fotky</button>
+                                        <button class="btn btn-sm btn-danger" onclick="deleteAlbumConfirm(<?= htmlspecialchars((string)($alb['ID_album'] ?? $alb['album']['ID_album'] ?? '')) ?>)">Vymazať album</button>
+                                    </td>
+                                </tr>
+                            <?php endforeach; ?>
+                        <?php else: ?>
+                            <tr><td colspan="5">Žiadne albumy</td></tr>
+                        <?php endif; ?>
+                    </tbody>
+                </table>
+            </div>
         </div>
     </div>
 </div>
@@ -203,6 +240,87 @@
           <button type="submit" class="btn btn-warning">Uložiť zmeny</button>
         </div>
       </form>
+    </div>
+  </div>
+</div>
+
+<!-- Create album modal -->
+<div class="modal fade" id="createAlbumModal" tabindex="-1" aria-labelledby="createAlbumLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="createAlbumLabel">Vytvoriť album</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="createAlbumForm">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Názov *</label>
+            <input class="form-control" name="name" required />
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Popis</label>
+            <textarea class="form-control" name="description"></textarea>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+          <button type="submit" class="btn btn-success">Vytvoriť</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Upload photos modal -->
+<div class="modal fade" id="uploadModal" tabindex="-1" aria-labelledby="uploadLabel" aria-hidden="true">
+  <div class="modal-dialog">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="uploadLabel">Nahrať fotky</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <form id="uploadForm" enctype="multipart/form-data">
+        <div class="modal-body">
+          <div class="mb-3">
+            <label class="form-label">Album</label>
+            <select id="uploadAlbumSelect" name="album_id" class="form-select" required>
+                <?php if (!empty($albums)): ?>
+                    <?php foreach ($albums as $alb): ?>
+                        <?php $aid = $alb['ID_album'] ?? $alb['album']['ID_album'] ?? null; $aname = $alb['name'] ?? $alb['album']['name'] ?? ''; ?>
+                        <?php if ($aid): ?><option value="<?= htmlspecialchars((string)$aid) ?>"><?= htmlspecialchars((string)$aname) ?></option><?php endif; ?>
+                    <?php endforeach; ?>
+                <?php endif; ?>
+            </select>
+          </div>
+          <div class="mb-3">
+            <label class="form-label">Fotky (môžete vybrať viac súborov)</label>
+            <input type="file" name="photos[]" id="photosInput" accept="image/*" multiple class="form-control" required>
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+          <button type="submit" class="btn btn-primary">Nahrať</button>
+        </div>
+      </form>
+    </div>
+  </div>
+</div>
+
+<!-- Photos modal (view + delete individual photos) -->
+<div class="modal fade" id="photosModal" tabindex="-1" aria-labelledby="photosModalLabel" aria-hidden="true">
+  <div class="modal-dialog modal-lg">
+    <div class="modal-content">
+      <div class="modal-header">
+        <h5 class="modal-title" id="photosModalLabel">Fotky v albume</h5>
+        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+      </div>
+      <div class="modal-body" id="photosModalBody">
+        <!-- Filled dynamically -->
+      </div>
+      <div class="modal-footer">
+        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
+      </div>
     </div>
   </div>
 </div>
@@ -433,6 +551,159 @@ function clearResultsYear() {
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'id=' // empty to clear
     })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+}
+
+// Gallery: open modals and handle create/upload
+function openCreateAlbumModal() {
+    var modal = new bootstrap.Modal(document.getElementById('createAlbumModal'));
+    modal.show();
+}
+
+function openUploadModal(albumId) {
+    if (albumId) {
+        const sel = document.getElementById('uploadAlbumSelect');
+        for (let i = 0; i < sel.options.length; i++) {
+            if (sel.options[i].value === String(albumId)) {
+                sel.selectedIndex = i; break;
+            }
+        }
+    }
+    var modal = new bootstrap.Modal(document.getElementById('uploadModal'));
+    modal.show();
+}
+
+// create album submit
+document.getElementById('createAlbumForm').onsubmit = function(e) {
+    e.preventDefault();
+    const fd = new FormData(e.target);
+    fetch('/?c=Admin&a=createAlbum', { method: 'POST', body: fd })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+};
+
+// upload photos submit
+document.getElementById('uploadForm').onsubmit = function(e) {
+    e.preventDefault();
+    // client-side size checks using server-provided limits
+    const UPLOAD_MAX_BYTES = <?= (int)($upload_max_bytes ?? 0) ?>;
+    const POST_MAX_BYTES = <?= (int)($post_max_bytes ?? 0) ?>;
+    const files = document.getElementById('photosInput').files;
+    if (!files || files.length === 0) {
+        alert('Vyberte aspoň jeden súbor.');
+        return;
+    }
+    let total = 0;
+    for (let i = 0; i < files.length; i++) {
+        total += files[i].size;
+        if (UPLOAD_MAX_BYTES > 0 && files[i].size > UPLOAD_MAX_BYTES) {
+            alert('Súbor "' + files[i].name + '" je príliš veľký. Maximálna veľkosť jedného súboru: ' + Math.round(UPLOAD_MAX_BYTES/1024/1024) + ' MB');
+            return;
+        }
+    }
+    if (POST_MAX_BYTES > 0 && total > POST_MAX_BYTES) {
+        alert('Súhrnná veľkosť súborov je príliš veľká. Maximálny súčet: ' + Math.round(POST_MAX_BYTES/1024/1024) + ' MB');
+        return;
+    }
+
+    const fd = new FormData(e.target);
+    fetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            alert('Nahrané ' + (data.files ? data.files.length : 0) + ' súborov.');
+            location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+};
+
+// base path for gallery assets
+const ASSET_GALLERY = '<?= isset($link) ? $link->asset('images/gallery') : '/images/gallery' ?>';
+
+function openPhotosModal(albumId) {
+    const body = document.getElementById('photosModalBody');
+    body.innerHTML = '<p>Načítavam...</p>';
+    var modal = new bootstrap.Modal(document.getElementById('photosModal'));
+    modal.show();
+    fetch(`/?c=Admin&a=listPhotos&album_id=${encodeURIComponent(albumId)}`)
+    .then(res => res.json())
+    .then(data => {
+        if (!data.success) {
+            body.innerHTML = '<div class="alert alert-danger">Chyba: ' + (data.message || 'Neznáma chyba') + '</div>';
+            return;
+        }
+        const photos = data.photos || [];
+        if (photos.length === 0) {
+            body.innerHTML = '<p>Žiadne fotky v albume.</p>';
+            return;
+        }
+        let html = '<div class="d-flex flex-wrap gap-2">';
+        photos.forEach(p => {
+            const src = ASSET_GALLERY + '/' + (p.album_id || albumId) + '/' + p.filename;
+            html += `<div class="card" style="width:140px;">
+                        <img src="${src}" class="card-img-top" style="height:100px; object-fit:cover;" />
+                        <div class="card-body p-2">
+                            <div class="small text-truncate">${(p.original_name || p.filename)}</div>
+                            <div class="d-flex mt-2">
+                                <a href="${src}" target="_blank" class="btn btn-sm btn-outline-primary me-1">Otvoriť</a>
+                                <button class="btn btn-sm btn-danger ms-auto" onclick="deletePhotoConfirm(${parseInt(p.ID_photo)})">Vymazať</button>
+                            </div>
+                        </div>
+                    </div>`;
+        });
+        html += '</div>';
+        body.innerHTML = html;
+    })
+    .catch(() => {
+        body.innerHTML = '<div class="alert alert-danger">Chyba pri načítaní fotiek.</div>';
+    });
+}
+
+function deletePhotoConfirm(photoId) {
+    if (!confirm('Naozaj vymazať túto fotku?')) return;
+    fetch(`/?c=Admin&a=delete&section=photos&id=${encodeURIComponent(photoId)}`, { method: 'POST' })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            // refresh modal content
+            // try to find currently open album id from modal images' src
+            const body = document.getElementById('photosModalBody');
+            const imgs = body.querySelectorAll('img');
+            let albumId = null;
+            if (imgs.length) {
+                const parts = imgs[0].src.split('/');
+                albumId = parts[parts.length-2];
+            }
+            if (albumId) openPhotosModal(albumId);
+            else location.reload();
+        } else {
+            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+        }
+    })
+    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+}
+
+function deleteAlbumConfirm(albumId) {
+    if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return;
+    fetch(`/?c=Admin&a=delete&section=albums&id=${encodeURIComponent(albumId)}`, { method: 'POST' })
     .then(res => res.json())
     .then(data => {
         if (data.success) {

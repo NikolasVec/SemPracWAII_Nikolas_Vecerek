@@ -65,11 +65,43 @@ class AdminController extends BaseController
             $currentResultsYear = null;
         }
 
+        // Fetch albums for gallery management if table exists
+        $albums = [];
+        try {
+            $stmt = $conn->query("SHOW TABLES LIKE 'albums'");
+            $albumsTableExists = $stmt->fetchColumn() !== false;
+            if ($albumsTableExists) {
+                $albums = $conn->query('SELECT * FROM albums ORDER BY created_at DESC')->fetchAll();
+            }
+        } catch (\Throwable $e) {
+            $albums = [];
+        }
+
+        // compute upload/post size limits (convert shorthand like '2M' to bytes)
+        $parseIniBytes = function($val) {
+            $val = trim($val);
+            if ($val === '') return 0;
+            $last = strtolower($val[strlen($val)-1]);
+            $num = (int)$val;
+            switch ($last) {
+                case 'g': $num *= 1024 * 1024 * 1024; break;
+                case 'm': $num *= 1024 * 1024; break;
+                case 'k': $num *= 1024; break;
+                default: // no suffix
+            }
+            return $num;
+        };
+        $uploadMaxBytes = $parseIniBytes(ini_get('upload_max_filesize') ?: '0');
+        $postMaxBytes = $parseIniBytes(ini_get('post_max_size') ?: '0');
+
         return $this->html([
             'bezci' => $bezci,
             'roky' => $roky,
             'stanoviska' => $stanoviska,
-            'currentResultsYear' => $currentResultsYear
+            'currentResultsYear' => $currentResultsYear,
+            'albums' => $albums,
+            'upload_max_bytes' => $uploadMaxBytes,
+            'post_max_bytes' => $postMaxBytes
         ]);
     }
 
@@ -188,17 +220,61 @@ class AdminController extends BaseController
         try {
             if ($section === 'bezci') {
                 $stmt = $conn->prepare('DELETE FROM Bezec WHERE ID_bezca = ?');
+                $stmt->execute([$id]);
             } elseif ($section === 'roky') {
                 $stmt = $conn->prepare('DELETE FROM rokKonania WHERE ID_roka = ?');
+                $stmt->execute([$id]);
             } elseif ($section === 'stanoviska') {
                 $stmt = $conn->prepare('DELETE FROM Stanovisko WHERE ID_stanoviska = ?');
+                $stmt->execute([$id]);
+            } elseif ($section === 'photos') {
+                // delete single photo by ID: remove file and DB row
+                $stmt = $conn->prepare('SELECT album_id, filename FROM photos WHERE ID_photo = ? LIMIT 1');
+                $stmt->execute([$id]);
+                $row = $stmt->fetch();
+                if ($row) {
+                    $albumId = $row['album_id'];
+                    $filename = $row['filename'];
+                    $projectRoot = dirname(dirname(__DIR__));
+                    $filePath = $projectRoot . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'gallery' . DIRECTORY_SEPARATOR . intval($albumId) . DIRECTORY_SEPARATOR . $filename;
+                    if (is_file($filePath)) {
+                        @unlink($filePath);
+                    }
+                    $del = $conn->prepare('DELETE FROM photos WHERE ID_photo = ?');
+                    $del->execute([$id]);
+                } else {
+                    return $this->json(['success' => false, 'message' => 'Fotka neexistuje.']);
+                }
+            } elseif ($section === 'albums') {
+                // delete album and all associated photos/files
+                $albumId = $id;
+                // fetch photos
+                $stmt = $conn->prepare('SELECT filename FROM photos WHERE album_id = ?');
+                $stmt->execute([$albumId]);
+                $photos = $stmt->fetchAll();
+                $projectRoot = dirname(dirname(__DIR__));
+                $albumDir = $projectRoot . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'gallery' . DIRECTORY_SEPARATOR . intval($albumId);
+                // delete files
+                foreach ($photos as $ph) {
+                    $filePath = $albumDir . DIRECTORY_SEPARATOR . ($ph['filename'] ?? '');
+                    if (is_file($filePath)) {
+                        @unlink($filePath);
+                    }
+                }
+                // remove photos records
+                $delPh = $conn->prepare('DELETE FROM photos WHERE album_id = ?');
+                $delPh->execute([$albumId]);
+                // remove album folder if empty
+                if (is_dir($albumDir)) {
+                    @rmdir($albumDir);
+                }
+                // delete album row
+                $stmt = $conn->prepare('DELETE FROM albums WHERE ID_album = ?');
+                $stmt->execute([$albumId]);
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
             }
 
-            $stmt->execute([$id]);
-
-            // If deleted a rok, optionally update participant counts or cascade as DB schema requires
             return $this->json(['success' => true]);
         } catch (\Throwable $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
@@ -360,4 +436,233 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    // --- New gallery-related actions ---
+
+    /**
+     * Create a new album (AJAX)
+     */
+    public function createAlbum(Request $request): Response
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
+        }
+
+        $name = trim($_POST['name'] ?? '');
+        $description = trim($_POST['description'] ?? '');
+
+        if ($name === '') {
+            return $this->json(['success' => false, 'message' => 'Názov albumu je povinný.']);
+        }
+
+        try {
+            $conn = Connection::getInstance();
+            // create albums table if not exists
+            $conn->exec("CREATE TABLE IF NOT EXISTS albums (ID_album INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), slug VARCHAR(255), description TEXT, created_at DATETIME)");
+
+            // generate simple slug
+            $slug = preg_replace('/[^a-z0-9]+/i', '-', strtolower($name));
+            $slug = trim($slug, '-');
+
+            $stmt = $conn->prepare('INSERT INTO albums (name, slug, description, created_at) VALUES (?, ?, ?, NOW())');
+            $stmt->execute([$name, $slug, $description]);
+            $id = $conn->lastInsertId();
+
+            return $this->json(['success' => true, 'id' => $id]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * Upload photos to an album (AJAX multipart/form-data)
+     */
+    public function uploadPhoto(Request $request): Response
+    {
+        if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+            return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
+        }
+
+        $albumId = $_POST['album_id'] ?? null;
+        // If $_POST and $_FILES are empty on a POST request, likely PHP's post_max_size/upload_max_filesize were exceeded
+        if ($_SERVER['REQUEST_METHOD'] === 'POST' && empty($_POST) && empty($_FILES)) {
+            return $this->json(['success' => false, 'message' => 'Žiadne údaje boli odoslané. Skontrolujte nastavenia PHP (post_max_size, upload_max_filesize) a veľkosť nahrávaných súborov.']);
+        }
+        if (!$albumId) {
+            return $this->json(['success' => false, 'message' => 'Chýba ID albumu.']);
+        }
+
+        try {
+            $conn = Connection::getInstance();
+            // create photos table if not exists
+            $conn->exec("CREATE TABLE IF NOT EXISTS photos (ID_photo INT AUTO_INCREMENT PRIMARY KEY, album_id INT, filename VARCHAR(255), original_name VARCHAR(255), created_at DATETIME)");
+
+            // prepare storage directory: public/images/gallery/{albumId}
+            $projectRoot = dirname(dirname(__DIR__));
+            $basePublic = $projectRoot . DIRECTORY_SEPARATOR . 'public';
+            $galleryBase = $basePublic . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'gallery';
+            if (!is_dir($galleryBase)) {
+                if (!mkdir($galleryBase, 0755, true) && !is_dir($galleryBase)) {
+                    throw new \RuntimeException('Nepodarilo sa vytvoriť priečinok galérie: ' . $galleryBase);
+                }
+            }
+            $albumDir = $galleryBase . DIRECTORY_SEPARATOR . intval($albumId);
+            if (!is_dir($albumDir)) {
+                if (!mkdir($albumDir, 0755, true) && !is_dir($albumDir)) {
+                    throw new \RuntimeException('Nepodarilo sa vytvoriť priečinok albumu: ' . $albumDir);
+                }
+            }
+
+            $uploaded = [];
+            $errors = [];
+
+            // Normalize various possible $_FILES shapes: photos[] (multiple), single photos, or other keys
+            if (!empty($_FILES['photos'])) {
+                $files = $_FILES['photos'];
+                // multiple
+                if (is_array($files['name'])) {
+                    $count = count($files['name']);
+                    for ($i = 0; $i < $count; $i++) {
+                        $err = $files['error'][$i];
+                        if ($err !== UPLOAD_ERR_OK) {
+                            $errors[] = "Upload error for file index $i: code $err";
+                            continue;
+                        }
+                        $tmp = $files['tmp_name'][$i];
+                        if (!is_uploaded_file($tmp)) {
+                            $errors[] = "Dočasný súbor nie je platný pre index $i";
+                            continue;
+                        }
+                        $orig = basename($files['name'][$i]);
+                        $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+                        if (!in_array($ext, ['jpg','jpeg','png','gif'])) {
+                            $errors[] = "Nepovolená prípona pre súbor: $orig";
+                            continue;
+                        }
+                        $newName = uniqid('', true) . '.' . $ext;
+                        $target = $albumDir . DIRECTORY_SEPARATOR . $newName;
+                        if (!move_uploaded_file($tmp, $target)) {
+                            $errors[] = "Nepodarilo sa presunúť súbor: $orig";
+                            continue;
+                        }
+                        $stmt = $conn->prepare('INSERT INTO photos (album_id, filename, original_name, created_at) VALUES (?, ?, ?, NOW())');
+                        $stmt->execute([intval($albumId), $newName, $orig]);
+                        $uploaded[] = $newName;
+                    }
+                } else {
+                    // single file in photos
+                    $err = $files['error'];
+                    if ($err === UPLOAD_ERR_OK) {
+                        $tmp = $files['tmp_name'];
+                        if (is_uploaded_file($tmp)) {
+                            $orig = basename($files['name']);
+                            $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+                            if (in_array($ext, ['jpg','jpeg','png','gif'])) {
+                                $newName = uniqid('', true) . '.' . $ext;
+                                $target = $albumDir . DIRECTORY_SEPARATOR . $newName;
+                                if (move_uploaded_file($tmp, $target)) {
+                                    $stmt = $conn->prepare('INSERT INTO photos (album_id, filename, original_name, created_at) VALUES (?, ?, ?, NOW())');
+                                    $stmt->execute([intval($albumId), $newName, $orig]);
+                                    $uploaded[] = $newName;
+                                } else {
+                                    $errors[] = "Nepodarilo sa presunúť súbor: $orig";
+                                }
+                            } else {
+                                $errors[] = "Nepovolená prípona pre súbor: $orig";
+                            }
+                        } else {
+                            $errors[] = 'Dočasný súbor nie je platný.';
+                        }
+                    } else {
+                        $errors[] = 'Chyba pri nahrávaní súboru (kód ' . $err . ')';
+                    }
+                }
+            } else {
+                // No 'photos' key - try to find any uploaded files
+                foreach ($_FILES as $key => $files) {
+                    if (empty($files)) continue;
+                    if (is_array($files['name'])) {
+                        $count = count($files['name']);
+                        for ($i = 0; $i < $count; $i++) {
+                            $err = $files['error'][$i];
+                            if ($err !== UPLOAD_ERR_OK) { $errors[] = "Upload error for $key index $i: code $err"; continue; }
+                            $tmp = $files['tmp_name'][$i];
+                            if (!is_uploaded_file($tmp)) { $errors[] = "Dočasný súbor nie je platný pre $key index $i"; continue; }
+                            $orig = basename($files['name'][$i]);
+                            $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+                            if (!in_array($ext, ['jpg','jpeg','png','gif'])) { $errors[] = "Nepovolená prípona pre súbor: $orig"; continue; }
+                            $newName = uniqid('', true) . '.' . $ext;
+                            $target = $albumDir . DIRECTORY_SEPARATOR . $newName;
+                            if (!move_uploaded_file($tmp, $target)) { $errors[] = "Nepodarilo sa presunúť súbor: $orig"; continue; }
+                            $stmt = $conn->prepare('INSERT INTO photos (album_id, filename, original_name, created_at) VALUES (?, ?, ?, NOW())');
+                            $stmt->execute([intval($albumId), $newName, $orig]);
+                            $uploaded[] = $newName;
+                        }
+                    } else {
+                        $err = $files['error'];
+                        if ($err !== UPLOAD_ERR_OK) { $errors[] = "Upload error for $key: code $err"; continue; }
+                        $tmp = $files['tmp_name'];
+                        if (!is_uploaded_file($tmp)) { $errors[] = "Dočasný súbor nie je platný pre $key"; continue; }
+                        $orig = basename($files['name']);
+                        $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+                        if (!in_array($ext, ['jpg','jpeg','png','gif'])) { $errors[] = "Nepovolená prípona pre súbor: $orig"; continue; }
+                        $newName = uniqid('', true) . '.' . $ext;
+                        $target = $albumDir . DIRECTORY_SEPARATOR . $newName;
+                        if (!move_uploaded_file($tmp, $target)) { $errors[] = "Nepodarilo sa presunúť súbor: $orig"; continue; }
+                        $stmt = $conn->prepare('INSERT INTO photos (album_id, filename, original_name, created_at) VALUES (?, ?, ?, NOW())');
+                        $stmt->execute([intval($albumId), $newName, $orig]);
+                        $uploaded[] = $newName;
+                    }
+                }
+            }
+
+            if (empty($uploaded)) {
+                $msg = 'Nepodarilo sa nahrať žiadne obrázky.';
+                if (!empty($errors)) {
+                    $msg .= ' Dôvody: ' . implode(' | ', $errors);
+                }
+
+                // write debug log to storage/logs/uploads.log to help troubleshooting
+                try {
+                    $logDir = $projectRoot . DIRECTORY_SEPARATOR . 'storage' . DIRECTORY_SEPARATOR . 'logs';
+                    if (!is_dir($logDir)) {
+                        @mkdir($logDir, 0755, true);
+                    }
+                    $logFile = $logDir . DIRECTORY_SEPARATOR . 'uploads.log';
+                    $entry = '[' . date('Y-m-d H:i:s') . '] album=' . intval($albumId) . ' msg="' . addslashes($msg) . '" errors="' . addslashes(implode(' | ', $errors)) . '" filesSnapshot="' . addslashes(json_encode(array_map(function($f){ return ['name'=>is_array($f['name'])? $f['name'] : $f['name'], 'error'=>is_array($f['error'])? $f['error'] : $f['error']]; }, $_FILES))) . '"' . PHP_EOL;
+                    @file_put_contents($logFile, $entry, FILE_APPEND | LOCK_EX);
+                } catch (\Throwable $e) {
+                    // ignore logging errors
+                }
+
+                return $this->json(['success' => false, 'message' => $msg]);
+            }
+
+            return $this->json(['success' => true, 'files' => $uploaded, 'errors' => $errors]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * List photos for an album (AJAX)
+     */
+    public function listPhotos(Request $request): Response
+    {
+        $albumId = $_GET['album_id'] ?? null;
+        if (!$albumId) {
+            return $this->json(['success' => false, 'message' => 'Chýba ID albumu.']);
+        }
+
+        try {
+            $conn = Connection::getInstance();
+            $stmt = $conn->prepare('SELECT ID_photo, album_id, filename, original_name, created_at FROM photos WHERE album_id = ? ORDER BY created_at ASC');
+            $stmt->execute([$albumId]);
+            $photos = $stmt->fetchAll();
+            return $this->json(['success' => true, 'photos' => $photos]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
 }

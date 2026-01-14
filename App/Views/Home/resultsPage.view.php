@@ -5,8 +5,6 @@
 <h1>
     <br>
     <br>
-    <br>
-    <strong>Vysledky</strong>
 </h1>
 
 <div class="container mt-4">
