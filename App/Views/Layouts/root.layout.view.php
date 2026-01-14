@@ -28,7 +28,7 @@
 <!-- Nastavenie navbaru -->
 <nav class="navbar navbar-expand-sm fixed-top">
     <!-- Hamburger (offcanvas) v ľavom rohu -->
-    <button class="btn btn-outline-light me-2" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu" aria-controls="offcanvasMenu" aria-label="Otvoriť menu" style="margin-left:8px;">
+    <button class="btn btn-outline-light me-3" type="button" data-bs-toggle="offcanvas" data-bs-target="#offcanvasMenu" aria-controls="offcanvasMenu" aria-label="Otvoriť menu" style="margin-left:8px;">
         <span class="navbar-toggler-icon"></span>
     </button>
 
@@ -53,7 +53,7 @@
     </div>
 
     <!-- Úplne pravý kraj: Log in/Log out (skryteľné na úzkom displeji) -->
-    <div class="d-flex align-items-center ms-3 nav-auth-group" style="min-width: 90px;">
+    <div class="d-flex align-items-center ms-1 nav-auth-group" style="min-width: 90px;">
         <?php if ($user->isLoggedIn()) { ?>
             <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
                 <!-- Admins: show Log out in navbar and icon leading to admin dashboard -->
@@ -76,7 +76,6 @@
 <!-- Offcanvas menu chứa položky hamburgeru -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
     <div class="offcanvas-header">
-        <h5 class="offcanvas-title" id="offcanvasMenuLabel"><?= App\Configuration::APP_NAME ?></h5>
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Zatvoriť"></button>
     </div>
     <div class="offcanvas-body">
@@ -87,6 +86,8 @@
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
             <?php if ($user->isLoggedIn()) { ?>
                 <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
+                    <!-- Admin: link to admin dashboard + logout -->
+                    <a class="list-group-item list-group-item-action" href="<?= $link->url('admin.index') ?>"><strong>Administrácia</strong></a>
                     <a class="list-group-item list-group-item-action" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
                 <?php } else { ?>
                     <!-- Non-admins: provide link to profile in offcanvas; logout available on profile page -->

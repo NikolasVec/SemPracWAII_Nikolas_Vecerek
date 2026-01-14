@@ -8,16 +8,15 @@
 </h1>
 
 <div class="container mt-4">
-    <h1>Výsledky behu</h1>
 
     <?php if (empty($resultsYear)): ?>
         <div class="alert alert-warning">Výsledky momentálne nie sú k dispozícii.</div>
     <?php else: ?>
-        <p>Zobrazujú sa výsledky pre rok: <strong><?= htmlspecialchars((string)($resultsYearLabel ?? $resultsYear)) ?></strong></p>
-
+        <H1>Výsledky behu pre rok: <strong><?= htmlspecialchars((string)($resultsYearLabel ?? $resultsYear)) ?></strong></H1>
+        <br>
         <div class="row">
             <div class="col-md-6">
-                <h2>Muži (M)</h2>
+                <h2>Muži</h2>
                 <?php if (!empty($maleResults)): ?>
                     <?php
                     // keep only those with a non-empty time
@@ -53,7 +52,7 @@
             </div>
 
             <div class="col-md-6">
-                <h2>Ženy (Ž)</h2>
+                <h2>Ženy </h2>
                 <?php if (!empty($femaleResults)): ?>
                     <?php
                     $finishedF = array_filter($femaleResults, function($r) { return !empty($r['cas_dobehnutia']); });
