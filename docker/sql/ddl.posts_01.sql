@@ -34,8 +34,10 @@ CREATE TABLE Stanovisko (
                             nazov VARCHAR(100) NOT NULL,
                             poloha VARCHAR(255),
                             popis TEXT,
-                            mapa_odkaz VARCHAR(255) DEFAULT NULL,
-                            obrazok_odkaz VARCHAR(255) DEFAULT NULL,
+                            mapa_odkaz VARCHAR(500) DEFAULT NULL,
+                            obrazok_odkaz VARCHAR(500) DEFAULT NULL,
+                            x_pos DECIMAL(9,6) NULL,
+                            y_pos DECIMAL(9,6) NULL,
                             ID_roka INT NOT NULL,
                             PRIMARY KEY (ID_stanoviska),
                             CONSTRAINT fk_stanovisko_rok
@@ -95,14 +97,9 @@ VALUES (2020,2020, '2020-06-17'),
        (2025,2025, '2025-06-10');
 
 
-INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `mapa_odkaz`, `obrazok_odkaz`, `ID_roka`)
-VALUES (1, 'Horská chata', 'Nízke Tatry', 'Chata sa nachádza v srdci Nízkych Tatier a ponúka útulné ubytovanie pre bežcov.', NULL, NULL, 2023),
-       (2, 'Lesný kemp', 'Malá Fatra', 'Kemp je obklopený hustým lesom a poskytuje ideálne miesto na oddych po behu.', NULL, NULL, 2024),
-       (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', NULL, NULL, 2025),
-         (4, 'Mestský park', 'Bratislava', 'Park v centre mesta ponúka zelené prostredie pre bežcov a ich rodiny.', NULL, NULL, 2023),
-            (5, 'Horský prameň', 'Vysoké Tatry', 'Prameň s čerstvou horskou vodou je ideálny na osvieženie počas behu.', NULL, NULL, 2024),
-                (6, 'Riečna oáza', 'Dunajská Streda', 'Oáza pri rieke poskytuje krásne výhľady a pokojné prostredie pre bežcov.', NULL, NULL, 2025),
-                     (7, 'Kultúrne centrum', 'Košice', 'Centrum ponúka kultúrne zážitky a oddych po behu v mestskom prostredí.', NULL, NULL, 2023);
+INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `mapa_odkaz`, `obrazok_odkaz`,`x_pos`,`y_pos`, `ID_roka`)
+VALUES (1, 'Pohostinstvo Sviečka', 'Ľatoveň', 'Štart behu.', 'https://www.google.com/maps/place/Pohostinstvo+SVIE%C4%8CKA/@49.0515116,18.9232402,17.5z/data=!4m6!3m5!1s0x4714feeb8bc2c9bd:0x28c42deccd2cf952!8m2!3d49.0517616!4d18.9244251!16s%2Fg%2F11cjg7rc3b?entry=ttu&g_ep=EgoyMDI2MDExMS4wIKXMDSoASAFQAw%3D%3D', 'https://lh3.googleusercontent.com/gps-cs-s/AG0ilSyEJm-8s7WR3P9_xI0_V1eqlmGTn-8mMKh5dolHRu1xKzglvIPSA24TnlqjDlaCKB7yL_6T8D2xaJqWzo433FQqSpEfL5ltf8uRgS6uzVaGeRSqAZP8Zr9gdNNrv5Nibz0tVBoA=w426-h240-k-no',0.486291, 0.861137, 2025),
+         (2, 'Občerstvenie Pod Lipou', 'Lipová', 'Občerstvenie pre bežcov.', 'https://www.google.com/maps/place/Ob%C4%8Derstvenie+Pod+Lipou/@49.0521231,18.9296573,17z/data=!3m1!4b1!4m6!3m5!1s0x4714feec2f3f5d7d:0x8e2f3c5e8c6e6e0!8m2!3d49.0521231!4d18.931846!16s%2Fg%2F11c52z1v8h?entry=ttu&g_ep=EgoyMDI2MDExMS4wIKXMDSoASAFQAw%3D%3D', 'https://lh3.googleusercontent.com/p/AF1QipM8oX9n5q8u0KXJH9G2ZV1xYkYkz3F0cXoZKJH-=s426-k-no',0.489500, 0.865300, 2025);
 
 INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`,`pohlavie`, `email`, `ID_roka`)
 VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
@@ -171,3 +168,8 @@ SET pocet_ucastnikov = (
     SELECT COUNT(*) FROM Bezec b WHERE b.ID_roka = rk.ID_roka
 )
 WHERE rk.ID_roka IN (SELECT DISTINCT ID_roka FROM Bezec);
+
+-- Migration adjustments moved here from migrate_add_xpos_ypos_stanovisko.sql:
+-- Ensure empty-string coordinates are normalized to NULL
+UPDATE `Stanovisko` SET x_pos = NULL WHERE x_pos = '';
+UPDATE `Stanovisko` SET y_pos = NULL WHERE y_pos = '';

@@ -346,6 +346,8 @@ const formFields = {
         {name: 'popis', label: 'Popis', type: 'textarea', required: false},
         {name: 'mapa_odkaz', label: 'Odkaz na mapu', type: 'text', required: false},
         {name: 'obrazok_odkaz', label: 'Odkaz na obrázok', type: 'text', required: false},
+        {name: 'x_pos', label: 'X (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
+        {name: 'y_pos', label: 'Y (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
         {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
     ]
 };
@@ -558,4 +560,112 @@ function openPhotosModal(albumId){ const body = document.getElementById('photosM
 function deletePhotoConfirm(photoId){ if (!confirm('Naozaj vymazať túto fotku?')) return; fetch('/?c=Admin&a=delete&section=photos&id=' + encodeURIComponent(photoId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ const body = document.getElementById('photosModalBody'); const imgs = body ? body.querySelectorAll('img') : []; let albumId = null; if (imgs && imgs.length){ const parts = imgs[0].src.split('/'); albumId = parts[parts.length-2]; } if (albumId) openPhotosModal(albumId); else location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
 
 function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return; fetch('/?c=Admin&a=delete&section=albums&id=' + encodeURIComponent(albumId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
+
+// --- Admin map picker: when add/edit modal contains x_pos/y_pos fields, show a small map picker image that
+// lets admin click to select relative coordinates (0..1). The picker will fill inputs and show a small marker.
+(function(){
+    // create picker HTML
+    function createPickerHtml() {
+        var html = '';
+        html += '<div class="admin-map-picker mt-3">';
+        html += '<div class="mb-2"><small class="text-muted">Vyberte pozíciu na mape (kliknutím) alebo zadajte čísla (0..1).</small></div>';
+        html += '<div style="position:relative; display:inline-block; max-width:100%;">';
+        html += '<img id="adminMapImg" src="/images/mapa_Martin.png" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
+        html += '<div id="adminMapMarker" style="position:absolute;width:14px;height:14px;border-radius:7px;background:rgba(220,53,69,0.9);border:2px solid white;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>';
+        html += '</div>';
+        html += '<div class="mt-2"><button type="button" id="clearMapPos" class="btn btn-sm btn-outline-secondary">Vymazať pozíciu</button></div>';
+        html += '</div>';
+        return html;
+     }
+
+    // Install picker into modal when it opens
+    document.addEventListener('shown.bs.modal', function(ev){
+        try {
+            // target addModal or editModal
+            var modal = ev.target;
+            if (!modal) return;
+            // add modal body where dynamic fields are rendered
+            var body = modal.querySelector('#addFormBody') || modal.querySelector('#editFormBody');
+            if (!body) return;
+            // only for stanoviska
+            var xInput = body.querySelector('input[name="x_pos"]');
+            var yInput = body.querySelector('input[name="y_pos"]');
+            if (!xInput || !yInput) return;
+
+            // if picker already exists, do nothing
+            if (body.querySelector('.admin-map-picker')) return;
+
+            // inject picker
+            var wrapper = document.createElement('div');
+            wrapper.innerHTML = createPickerHtml();
+            body.appendChild(wrapper);
+
+            var img = body.querySelector('#adminMapImg');
+            var marker = body.querySelector('#adminMapMarker');
+            var clearBtn = body.querySelector('#clearMapPos');
+
+            function setMarkerRel(relX, relY) {
+                if (!img) return;
+                var rect = img.getBoundingClientRect();
+                // compute pixel position
+                var px = rect.left + relX * rect.width;
+                var py = rect.top + relY * rect.height;
+                // position marker relative to image container (which is positioned)
+                var containerRect = img.parentElement.getBoundingClientRect();
+                var left = relX * img.parentElement.offsetWidth;
+                var top = relY * img.parentElement.offsetHeight;
+                marker.style.left = (relX * 100) + '%';
+                marker.style.top = (relY * 100) + '%';
+                marker.style.display = 'block';
+            }
+
+            img.addEventListener('click', function(e){
+                var rect = img.getBoundingClientRect();
+                var relX = (e.clientX - rect.left) / rect.width;
+                var relY = (e.clientY - rect.top) / rect.height;
+                relX = Math.min(Math.max(relX,0),1);
+                relY = Math.min(Math.max(relY,0),1);
+                // set inputs with 6 decimal places
+                xInput.value = relX.toFixed(6);
+                yInput.value = relY.toFixed(6);
+                setMarkerRel(relX, relY);
+            });
+
+            // if inputs already have values, show marker
+            if (xInput.value !== '' && yInput.value !== '') {
+                var vx = parseFloat(xInput.value);
+                var vy = parseFloat(yInput.value);
+                if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+            }
+
+            clearBtn.addEventListener('click', function(){
+                xInput.value = '';
+                yInput.value = '';
+                marker.style.display = 'none';
+            });
+
+            // when inputs change manually, update marker
+            xInput.addEventListener('input', function(){
+                var vx = parseFloat(xInput.value);
+                var vy = parseFloat(yInput.value);
+                if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+                else marker.style.display = 'none';
+            });
+            yInput.addEventListener('input', function(){
+                var vx = parseFloat(xInput.value);
+                var vy = parseFloat(yInput.value);
+                if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+                else marker.style.display = 'none';
+            });
+
+            // handle modal hide: remove picker to avoid duplicates next time
+            modal.addEventListener('hidden.bs.modal', function(){
+                var p = body.querySelector('.admin-map-picker'); if (p) p.remove();
+            }, { once: true });
+
+        } catch (err) {
+            console.error('Map picker init error', err);
+        }
+    });
+})();
 </script>

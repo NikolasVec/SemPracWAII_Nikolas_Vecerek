@@ -187,6 +187,9 @@ class AdminController extends BaseController
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
                 $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? '');
+                // optional relative positions on the admin map image (0..1)
+                $x_pos = trim($_POST['x_pos'] ?? '');
+                $y_pos = trim($_POST['y_pos'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
 
                 if ($nazov === '' || !$ID_roka) {
@@ -196,9 +199,11 @@ class AdminController extends BaseController
                 // convert empty strings to NULL so DB can store default NULL
                 $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
                 $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
+                $xVal = ($x_pos === '' ? null : (is_numeric($x_pos) ? $x_pos : null));
+                $yVal = ($y_pos === '' ? null : (is_numeric($y_pos) ? $y_pos : null));
 
-                $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, mapa_odkaz, obrazok_odkaz, ID_roka) VALUES (?, ?, ?, ?, ?, ?)');
-                $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka]);
+                $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, mapa_odkaz, obrazok_odkaz, ID_roka, x_pos, y_pos) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka, $xVal, $yVal]);
 
                 return $this->json(['success' => true]);
             } else {
@@ -392,6 +397,8 @@ class AdminController extends BaseController
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
                 $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? '');
+                $x_pos = trim($_POST['x_pos'] ?? '');
+                $y_pos = trim($_POST['y_pos'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
 
                 if ($nazov === '' || !$ID_roka) {
@@ -400,9 +407,11 @@ class AdminController extends BaseController
 
                 $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
                 $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
+                $xVal = ($x_pos === '' ? null : (is_numeric($x_pos) ? $x_pos : null));
+                $yVal = ($y_pos === '' ? null : (is_numeric($y_pos) ? $y_pos : null));
 
-                $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, mapa_odkaz=?, obrazok_odkaz=?, ID_roka=? WHERE ID_stanoviska=?');
-                $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka, $id]);
+                $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, mapa_odkaz=?, obrazok_odkaz=?, ID_roka=?, x_pos=?, y_pos=? WHERE ID_stanoviska=?');
+                $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka, $xVal, $yVal, $id]);
 
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
