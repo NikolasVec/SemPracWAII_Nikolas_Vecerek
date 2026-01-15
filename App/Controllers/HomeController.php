@@ -53,7 +53,19 @@ class HomeController extends BaseController
      */
     public function mapa(Request $request): Response
     {
-        return $this->html();
+        $conn = \Framework\DB\Connection::getInstance();
+        $stanoviska = [];
+        $error = null;
+        try {
+            $stmt = $conn->query('SELECT * FROM Stanovisko');
+            $stanoviska = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+        } catch (\Throwable $e) {
+            // capture error for debugging in the view
+            $stanoviska = [];
+            $error = $e->getMessage();
+        }
+
+        return $this->html(['stanoviska' => $stanoviska, 'mapa_error' => $error]);
     }
     public function galleryPage(Request $request): Response
     {

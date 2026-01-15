@@ -48,9 +48,9 @@ class Connection
         try {
             if (self::$instance == null) {
                 $db = new PDO(
-                    'mysql:dbname=' . Configuration::DB_NAME . ';host=' . Configuration::DB_HOST,
-                    Configuration::DB_USER,
-                    Configuration::DB_PASS
+                    'mysql:dbname=' . Configuration::DB_NAME . ';host=' . (getenv('DB_HOST') ?: Configuration::DB_HOST),
+                    (getenv('DB_USER') ?: Configuration::DB_USER),
+                    (getenv('DB_PASS') ?: Configuration::DB_PASS)
                 );
                 $db->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
                 $db->setAttribute(PDO::ATTR_EMULATE_PREPARES, true);
