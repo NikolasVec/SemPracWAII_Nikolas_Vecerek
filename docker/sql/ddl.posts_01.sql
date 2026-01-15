@@ -34,6 +34,8 @@ CREATE TABLE Stanovisko (
                             nazov VARCHAR(100) NOT NULL,
                             poloha VARCHAR(255),
                             popis TEXT,
+                            mapa_odkaz VARCHAR(255) DEFAULT NULL,
+                            obrazok_odkaz VARCHAR(255) DEFAULT NULL,
                             ID_roka INT NOT NULL,
                             PRIMARY KEY (ID_stanoviska),
                             CONSTRAINT fk_stanovisko_rok
@@ -93,14 +95,14 @@ VALUES (2020,2020, '2020-06-17'),
        (2025,2025, '2025-06-10');
 
 
-INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `ID_roka`)
-VALUES (1, 'Horská chata', 'Nízke Tatry', 'Chata sa nachádza v srdci Nízkych Tatier a ponúka útulné ubytovanie pre bežcov.', 2023),
-       (2, 'Lesný kemp', 'Malá Fatra', 'Kemp je obklopený hustým lesom a poskytuje ideálne miesto na oddych po behu.', 2024),
-       (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', 2025),
-         (4, 'Mestský park', 'Bratislava', 'Park v centre mesta ponúka zelené prostredie pre bežcov a ich rodiny.', 2023),
-            (5, 'Horský prameň', 'Vysoké Tatry', 'Prameň s čerstvou horskou vodou je ideálny na osvieženie počas behu.', 2024),
-                (6, 'Riečna oáza', 'Dunajská Streda', 'Oáza pri rieke poskytuje krásne výhľady a pokojné prostredie pre bežcov.', 2025),
-                     (7, 'Kultúrne centrum', 'Košice', 'Centrum ponúka kultúrne zážitky a oddych po behu v mestskom prostredí.', 2023);
+INSERT INTO `Stanovisko` (`ID_stanoviska`, `nazov`, `poloha`, `popis`, `mapa_odkaz`, `obrazok_odkaz`, `ID_roka`)
+VALUES (1, 'Horská chata', 'Nízke Tatry', 'Chata sa nachádza v srdci Nízkych Tatier a ponúka útulné ubytovanie pre bežcov.', NULL, NULL, 2023),
+       (2, 'Lesný kemp', 'Malá Fatra', 'Kemp je obklopený hustým lesom a poskytuje ideálne miesto na oddych po behu.', NULL, NULL, 2024),
+       (3, 'Jazerná pláž', 'Oravská priehrada', 'Pláž pri jazere je skvelým miestom na regeneráciu a relaxáciu po náročnom behu.', NULL, NULL, 2025),
+         (4, 'Mestský park', 'Bratislava', 'Park v centre mesta ponúka zelené prostredie pre bežcov a ich rodiny.', NULL, NULL, 2023),
+            (5, 'Horský prameň', 'Vysoké Tatry', 'Prameň s čerstvou horskou vodou je ideálny na osvieženie počas behu.', NULL, NULL, 2024),
+                (6, 'Riečna oáza', 'Dunajská Streda', 'Oáza pri rieke poskytuje krásne výhľady a pokojné prostredie pre bežcov.', NULL, NULL, 2025),
+                     (7, 'Kultúrne centrum', 'Košice', 'Centrum ponúka kultúrne zážitky a oddych po behu v mestskom prostredí.', NULL, NULL, 2023);
 
 INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`,`pohlavie`, `email`, `ID_roka`)
 VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),

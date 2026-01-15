@@ -185,14 +185,20 @@ class AdminController extends BaseController
                 $nazov = trim($_POST['nazov'] ?? '');
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
+                $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
+                $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
 
                 if ($nazov === '' || !$ID_roka) {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
 
-                $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, ID_roka) VALUES (?, ?, ?, ?)');
-                $stmt->execute([$nazov, $poloha, $popis, $ID_roka]);
+                // convert empty strings to NULL so DB can store default NULL
+                $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
+                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
+
+                $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, mapa_odkaz, obrazok_odkaz, ID_roka) VALUES (?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka]);
 
                 return $this->json(['success' => true]);
             } else {
@@ -384,14 +390,19 @@ class AdminController extends BaseController
                 $nazov = trim($_POST['nazov'] ?? '');
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
+                $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
+                $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
 
                 if ($nazov === '' || !$ID_roka) {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
 
-                $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, ID_roka=? WHERE ID_stanoviska=?');
-                $stmt->execute([$nazov, $poloha, $popis, $ID_roka, $id]);
+                $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
+                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
+
+                $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, mapa_odkaz=?, obrazok_odkaz=?, ID_roka=? WHERE ID_stanoviska=?');
+                $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka, $id]);
 
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);

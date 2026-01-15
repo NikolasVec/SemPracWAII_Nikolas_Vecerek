@@ -326,7 +326,7 @@
 </div>
 
 <script>
-// Definícia polí pre každý typ tabuľky (používa sa na generovanie formulárov)
+// Admin UI script (cleaned, formatted)
 const formFields = {
     bezci: [
         {name: 'meno', label: 'Meno', type: 'text', required: true},
@@ -344,374 +344,218 @@ const formFields = {
         {name: 'nazov', label: 'Názov', type: 'text', required: true},
         {name: 'poloha', label: 'Poloha', type: 'text', required: false},
         {name: 'popis', label: 'Popis', type: 'textarea', required: false},
+        {name: 'mapa_odkaz', label: 'Odkaz na mapu', type: 'text', required: false},
+        {name: 'obrazok_odkaz', label: 'Odkaz na obrázok', type: 'text', required: false},
         {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
     ]
 };
-let currentSection = null;
 
-// Otvorí modal na pridanie záznamu a vygeneruje formulár podľa sekcie
+let currentSection = null;
+let currentEditId = null;
+
 function openAddModal(section) {
     currentSection = section;
-    const fields = formFields[section];
+    const fields = formFields[section] || [];
     let html = '';
-    fields.forEach(field => {
-        html += `<div class="mb-3">`;
-        html += `<label class="form-label">${field.label}${field.required ? ' *' : ''}</label>`;
+    fields.forEach(function(field) {
+        html += '<div class="mb-3">';
+        html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
         if (field.type === 'select') {
-            html += `<select class="form-select" name="${field.name}" required>`;
-            field.options.forEach(opt => {
-                html += `<option value="${opt}">${opt}</option>`;
-            });
-            html += `</select>`;
+            html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+            field.options.forEach(function(opt) { html += '<option value="' + opt + '">' + opt + '</option>'; });
+            html += '</select>';
         } else if (field.type === 'textarea') {
-            html += `<textarea class="form-control" name="${field.name}" ${field.required ? 'required' : ''}></textarea>`;
+            html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '></textarea>';
         } else {
-            // include step attribute when provided (used for time inputs to allow seconds)
-            html += `<input class="form-control" type="${field.type}" name="${field.name}" ${field.required ? 'required' : ''}${field.step ? ' step="' + field.step + '"' : ''}>`;
+            html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
         }
-        html += `</div>`;
+        html += '</div>';
     });
-    document.getElementById('addFormBody').innerHTML = html;
-    var modal = new bootstrap.Modal(document.getElementById('addModal'));
-    modal.show();
+
+    const addBody = document.getElementById('addFormBody');
+    if (addBody) addBody.innerHTML = html;
+    const modalEl = document.getElementById('addModal');
+    if (modalEl) new bootstrap.Modal(modalEl).show();
 }
 
-// Handler pre odoslanie formulára na pridanie záznamu (AJAX)
-document.getElementById('addForm').onsubmit = function(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    fetch(`/?c=Admin&a=add&section=${currentSection}`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
-    })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
-};
+// Add form submit
+(function() {
+    const addForm = document.getElementById('addForm');
+    if (!addForm) return;
+    addForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fd = new FormData(addForm);
+        fetch('/?c=Admin&a=add&section=' + encodeURIComponent(currentSection), { method: 'POST', body: fd })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.success) {
+                    location.reload();
+                } else {
+                    alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+                }
+            })
+            .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
+    });
+})();
 
-// Otvorí modal na vymazanie záznamu podľa sekcie
 function openDeleteModal(section) {
     window.currentDeleteSection = section;
-    document.getElementById('deleteId').value = '';
-    var modal = new bootstrap.Modal(document.getElementById('deleteModal'));
-    modal.show();
+    const el = document.getElementById('deleteId'); if (el) el.value = '';
+    const modalEl = document.getElementById('deleteModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
 }
 
-// Handler na tlačidlá Vymazať (otvára modal na zadanie ID)
-const deleteButtons = document.querySelectorAll('.btn-danger[data-section]');
-deleteButtons.forEach((btn) => {
-    btn.onclick = function() {
-        let section = btn.getAttribute('data-section');
-        openDeleteModal(section);
-    };
-});
+// Attach delete buttons
+(function() {
+    const buttons = document.querySelectorAll('.btn-danger[data-section]');
+    if (!buttons) return;
+    buttons.forEach(function(btn) {
+        btn.onclick = function() { openDeleteModal(btn.getAttribute('data-section')); };
+    });
+})();
 
-// Handler pre odoslanie formulára na vymazanie záznamu (najprv načíta údaje a zobrazí potvrdenie)
-document.getElementById('deleteForm').onsubmit = function(e) {
-    e.preventDefault();
-    const id = document.getElementById('deleteId').value;
-    // Najprv načítaj údaje záznamu
-    fetch(`/?c=Admin&a=get&section=${window.currentDeleteSection}&id=${id}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.success && data.item) {
-            // Priprav text podľa sekcie
-            let info = '';
-            if (window.currentDeleteSection === 'bezci') {
-                info = `${data.item.meno} ${data.item.priezvisko}`;
-            } else if (window.currentDeleteSection === 'roky') {
-                info = `rok ${data.item.rok}`;
-            } else if (window.currentDeleteSection === 'stanoviska') {
-                info = `${data.item.nazov}`;
-            }
-            if (confirm(`Naozaj chcete vymazať záznam: ${info}?`)) {
-                // Skutočné vymazanie
-                fetch(`/?c=Admin&a=delete&section=${window.currentDeleteSection}&id=${id}`, {
-                    method: 'POST'
-                })
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        location.reload();
-                    } else {
-                        alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
+// Delete form
+(function() {
+    const delForm = document.getElementById('deleteForm');
+    if (!delForm) return;
+    delForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('deleteId').value;
+        fetch('/?c=Admin&a=get&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.item) {
+                    var info = '';
+                    if (window.currentDeleteSection === 'bezci') info = data.item.meno + ' ' + data.item.priezvisko;
+                    else if (window.currentDeleteSection === 'roky') info = 'rok ' + data.item.rok;
+                    else if (window.currentDeleteSection === 'stanoviska') info = data.item.nazov;
+
+                    if (confirm('Naozaj chcete vymazať záznam: ' + info + '?')) {
+                        fetch('/?c=Admin&a=delete&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id), { method: 'POST' })
+                            .then(function(res) { return res.json(); })
+                            .then(function(resp) {
+                                if (resp && resp.success) location.reload();
+                                else alert('Chyba: ' + (resp && resp.message ? resp.message : 'Neznáma chyba.'));
+                            }).catch(function() { alert('Chyba pri komunikácii so serverom.'); });
                     }
-                })
-                .catch(() => alert('Chyba pri komunikácii so serverom.'));
-            }
-        } else {
-            alert('Záznam s daným ID neexistuje.');
-        }
-    })
-    .catch(() => alert('Chyba pri načítaní údajov.'));
-};
-
-// Handler na tlačidlá Upraviť (otvára modal na zadanie ID pre úpravu)
-const editButtons = document.querySelectorAll('.btn-warning[data-section]');
-editButtons.forEach((btn) => {
-    btn.onclick = function() {
-        window.currentEditSection = btn.getAttribute('data-section');
-        document.getElementById('editId').value = '';
-        var modal = new bootstrap.Modal(document.getElementById('editIdModal'));
-        modal.show();
-    };
-});
-
-// Handler pre odoslanie formulára na zadanie ID pre úpravu (načíta dáta cez AJAX a otvorí editovací modal)
-document.getElementById('editIdForm').onsubmit = function(e) {
-    e.preventDefault();
-    const id = document.getElementById('editId').value;
-    fetch(`/?c=Admin&a=get&section=${window.currentEditSection}&id=${id}`)
-    .then(res => res.json())
-    .then(data => {
-        if (data.success && data.item) {
-            // Vygeneruj editovací formulár podľa sekcie a predvyplň hodnoty
-            const section = window.currentEditSection;
-            const fields = formFields[section];
-            let html = '';
-            fields.forEach(field => {
-                html += `<div class="mb-3">`;
-                html += `<label class="form-label">${field.label}${field.required ? ' *' : ''}</label>`;
-                let value = data.item[field.name] ?? '';
-                if (field.type === 'select') {
-                    html += `<select class="form-select" name="${field.name}" required>`;
-                    field.options.forEach(opt => {
-                        html += `<option value="${opt}"${opt===value? ' selected' : ''}>${opt}</option>`;
-                    });
-                    html += `</select>`;
-                } else if (field.type === 'textarea') {
-                    html += `<textarea class="form-control" name="${field.name}" ${field.required ? 'required' : ''}>${value}</textarea>`;
                 } else {
-                    // include step attribute when provided (used for time inputs to allow seconds)
-                    html += `<input class="form-control" type="${field.type}" name="${field.name}" value="${value}" ${field.required ? 'required' : ''}${field.step ? ' step="' + field.step + '"' : ''}>`;
+                    alert('Záznam s daným ID neexistuje.');
                 }
-                html += `</div>`;
-            });
-            document.getElementById('editFormBody').innerHTML = html;
-            window.currentEditId = id;
-            var modal = new bootstrap.Modal(document.getElementById('editModal'));
-            modal.show();
-        } else {
-            alert('Záznam s daným ID neexistuje.');
-        }
-    })
-    .catch(() => alert('Chyba pri načítaní údajov.'));
-};
+            }).catch(function() { alert('Chyba pri načítaní údajov.'); });
+    });
+})();
 
-// Handler pre odoslanie editovacieho formulára (AJAX, uloží zmeny do DB)
-document.getElementById('editForm').onsubmit = function(e) {
-    e.preventDefault();
-    const formData = new FormData(e.target);
-    formData.append('id', window.currentEditId);
-    fetch(`/?c=Admin&a=update&section=${window.currentEditSection}`, {
-        method: 'POST',
-        body: formData
-    })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
-    })
-    .catch(() => alert('Chyba pri ukladaní zmien.'));
-}
+// Edit buttons
+(function() {
+    const editButtons = document.querySelectorAll('.btn-warning[data-section]');
+    if (!editButtons) return;
+    editButtons.forEach(function(btn) {
+        btn.onclick = function() {
+            window.currentEditSection = btn.getAttribute('data-section');
+            const el = document.getElementById('editId'); if (el) el.value = '';
+            const modalEl = document.getElementById('editIdModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
+        };
+    });
+})();
 
-// add setResultsYear JS functions near the end of the script
+// Edit ID form
+(function() {
+    const form = document.getElementById('editIdForm');
+    if (!form) return;
+    form.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const id = document.getElementById('editId').value;
+        fetch('/?c=Admin&a=get&section=' + encodeURIComponent(window.currentEditSection) + '&id=' + encodeURIComponent(id))
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.item) {
+                    const section = window.currentEditSection;
+                    const fields = formFields[section] || [];
+                    let html = '';
+                    fields.forEach(function(field) {
+                        const value = data.item[field.name] || '';
+                        html += '<div class="mb-3">';
+                        html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
+                        if (field.type === 'select') {
+                            html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+                            field.options.forEach(function(opt) { html += '<option value="' + opt + '"' + (opt == value ? ' selected' : '') + '>' + opt + '</option>'; });
+                            html += '</select>';
+                        } else if (field.type === 'textarea') {
+                            html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '>' + value + '</textarea>';
+                        } else {
+                            html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '" value="' + value + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
+                        }
+                        html += '</div>';
+                    });
+                    const editBody = document.getElementById('editFormBody'); if (editBody) editBody.innerHTML = html;
+                    window.currentEditId = id;
+                    const modalEl = document.getElementById('editModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
+                } else {
+                    alert('Záznam s daným ID neexistuje.');
+                }
+            }).catch(function() { alert('Chyba pri načítaní údajov.'); });
+    });
+})();
 
+// Edit submit
+(function() {
+    const editForm = document.getElementById('editForm');
+    if (!editForm) return;
+    editForm.addEventListener('submit', function(e) {
+        e.preventDefault();
+        const fd = new FormData(editForm);
+        fd.append('id', window.currentEditId);
+        fetch('/?c=Admin&a=update&section=' + encodeURIComponent(window.currentEditSection), { method: 'POST', body: fd })
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data && data.success) location.reload();
+                else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+            }).catch(function() { alert('Chyba pri ukladaní zmien.'); });
+    });
+})();
+
+// set/clear results year
 function setResultsYear(id) {
     if (!confirm('Nastaviť rok s ID ' + id + ' ako výsledkový rok?')) return;
-    fetch(`/?c=Admin&a=setResultsYear`, {
+    fetch('/?c=Admin&a=setResultsYear', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
         body: 'id=' + encodeURIComponent(id)
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data && data.success) location.reload();
+        else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
     })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+    .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
 }
 
 function clearResultsYear() {
     if (!confirm('Naozaj zrušiť vybraný výsledkový rok?')) return;
-    fetch(`/?c=Admin&a=setResultsYear`, {
+    fetch('/?c=Admin&a=setResultsYear', {
         method: 'POST',
         headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'id=' // empty to clear
+        body: 'id='
     })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
+    .then(function(res) { return res.json(); })
+    .then(function(data) {
+        if (data && data.success) location.reload();
+        else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
     })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
+    .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
 }
 
-// Gallery: open modals and handle create/upload
-function openCreateAlbumModal() {
-    var modal = new bootstrap.Modal(document.getElementById('createAlbumModal'));
-    modal.show();
-}
+// Gallery helpers and uploads
+function openCreateAlbumModal() { const m = document.getElementById('createAlbumModal'); if (m) new bootstrap.Modal(m).show(); }
+function openUploadModal(albumId) { const sel = document.getElementById('uploadAlbumSelect'); if (sel && albumId) { for (let i=0;i<sel.options.length;i++){ if (sel.options[i].value===String(albumId)){ sel.selectedIndex=i; break; } } } const m = document.getElementById('uploadModal'); if (m) new bootstrap.Modal(m).show(); }
 
-function openUploadModal(albumId) {
-    if (albumId) {
-        const sel = document.getElementById('uploadAlbumSelect');
-        for (let i = 0; i < sel.options.length; i++) {
-            if (sel.options[i].value === String(albumId)) {
-                sel.selectedIndex = i; break;
-            }
-        }
-    }
-    var modal = new bootstrap.Modal(document.getElementById('uploadModal'));
-    modal.show();
-}
+(function attachCreateAlbum(){ const f = document.getElementById('createAlbumForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const fd = new FormData(f); fetch('/?c=Admin&a=createAlbum', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
 
-// create album submit
-document.getElementById('createAlbumForm').onsubmit = function(e) {
-    e.preventDefault();
-    const fd = new FormData(e.target);
-    fetch('/?c=Admin&a=createAlbum', { method: 'POST', body: fd })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
-    })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
-};
+(function attachUploadForm(){ const f = document.getElementById('uploadForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const UPLOAD_MAX_BYTES = <?= (int)($upload_max_bytes ?? 0) ?>; const POST_MAX_BYTES = <?= (int)($post_max_bytes ?? 0) ?>; const input = document.getElementById('photosInput'); const files = input ? input.files : null; if (!files || files.length === 0) { alert('Vyberte aspoň jeden súbor.'); return; } let total = 0; for (let i=0;i<files.length;i++){ total += files[i].size; if (UPLOAD_MAX_BYTES > 0 && files[i].size > UPLOAD_MAX_BYTES){ alert('Súbor "' + files[i].name + '" je príliš veľký.'); return; } } if (POST_MAX_BYTES > 0 && total > POST_MAX_BYTES) { alert('Súhrnná veľkosť súborov je príliš veľká.'); return; } const fd = new FormData(f); fetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ alert('Nahrané ' + (data.files ? data.files.length : 0) + ' súborov.'); location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
 
-// upload photos submit
-document.getElementById('uploadForm').onsubmit = function(e) {
-    e.preventDefault();
-    // client-side size checks using server-provided limits
-    const UPLOAD_MAX_BYTES = <?= (int)($upload_max_bytes ?? 0) ?>;
-    const POST_MAX_BYTES = <?= (int)($post_max_bytes ?? 0) ?>;
-    const files = document.getElementById('photosInput').files;
-    if (!files || files.length === 0) {
-        alert('Vyberte aspoň jeden súbor.');
-        return;
-    }
-    let total = 0;
-    for (let i = 0; i < files.length; i++) {
-        total += files[i].size;
-        if (UPLOAD_MAX_BYTES > 0 && files[i].size > UPLOAD_MAX_BYTES) {
-            alert('Súbor "' + files[i].name + '" je príliš veľký. Maximálna veľkosť jedného súboru: ' + Math.round(UPLOAD_MAX_BYTES/1024/1024) + ' MB');
-            return;
-        }
-    }
-    if (POST_MAX_BYTES > 0 && total > POST_MAX_BYTES) {
-        alert('Súhrnná veľkosť súborov je príliš veľká. Maximálny súčet: ' + Math.round(POST_MAX_BYTES/1024/1024) + ' MB');
-        return;
-    }
-
-    const fd = new FormData(e.target);
-    fetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            alert('Nahrané ' + (data.files ? data.files.length : 0) + ' súborov.');
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
-    })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
-};
-
-// base path for gallery assets
 const ASSET_GALLERY = '<?= isset($link) ? $link->asset('images/gallery') : '/images/gallery' ?>';
+function openPhotosModal(albumId){ const body = document.getElementById('photosModalBody'); if (!body) return; body.innerHTML = '<p>Načítavam...</p>'; const modalEl = document.getElementById('photosModal'); if (modalEl) new bootstrap.Modal(modalEl).show(); fetch('/?c=Admin&a=listPhotos&album_id=' + encodeURIComponent(albumId)).then(function(res){ return res.json(); }).then(function(data){ if (!data || !data.success){ body.innerHTML = '<div class="alert alert-danger">Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba') + '</div>'; return; } const photos = data.photos || []; if (photos.length === 0){ body.innerHTML = '<p>Žiadne fotky v albume.</p>'; return; } let html = '<div class="d-flex flex-wrap gap-2">'; photos.forEach(function(p){ const src = ASSET_GALLERY + '/' + (p.album_id || albumId) + '/' + p.filename; html += '<div class="card" style="width:140px;"><img src="' + src + '" class="card-img-top" alt="' + (p.original_name || p.filename) + '" style="height:100px; object-fit:cover;" /><div class="card-body p-2"><div class="small text-truncate">' + (p.original_name || p.filename) + '</div><div class="d-flex mt-2"><a href="' + src + '" target="_blank" class="btn btn-sm btn-outline-primary me-1">Otvoriť</a><button class="btn btn-sm btn-danger ms-auto" onclick="deletePhotoConfirm(' + parseInt(p.ID_photo) + ')">Vymazať</button></div></div></div>'; }); html += '</div>'; body.innerHTML = html; }).catch(function(){ body.innerHTML = '<div class="alert alert-danger">Chyba pri načítaní fotiek.</div>'; }); }
 
-function openPhotosModal(albumId) {
-    const body = document.getElementById('photosModalBody');
-    body.innerHTML = '<p>Načítavam...</p>';
-    var modal = new bootstrap.Modal(document.getElementById('photosModal'));
-    modal.show();
-    fetch(`/?c=Admin&a=listPhotos&album_id=${encodeURIComponent(albumId)}`)
-    .then(res => res.json())
-    .then(data => {
-        if (!data.success) {
-            body.innerHTML = '<div class="alert alert-danger">Chyba: ' + (data.message || 'Neznáma chyba') + '</div>';
-            return;
-        }
-        const photos = data.photos || [];
-        if (photos.length === 0) {
-            body.innerHTML = '<p>Žiadne fotky v albume.</p>';
-            return;
-        }
-        let html = '<div class="d-flex flex-wrap gap-2">';
-        photos.forEach(p => {
-            const src = ASSET_GALLERY + '/' + (p.album_id || albumId) + '/' + p.filename;
-            html += `<div class="card" style="width:140px;">
-                        <img src="${src}" class="card-img-top" style="height:100px; object-fit:cover;" />
-                        <div class="card-body p-2">
-                            <div class="small text-truncate">${(p.original_name || p.filename)}</div>
-                            <div class="d-flex mt-2">
-                                <a href="${src}" target="_blank" class="btn btn-sm btn-outline-primary me-1">Otvoriť</a>
-                                <button class="btn btn-sm btn-danger ms-auto" onclick="deletePhotoConfirm(${parseInt(p.ID_photo)})">Vymazať</button>
-                            </div>
-                        </div>
-                    </div>`;
-        });
-        html += '</div>';
-        body.innerHTML = html;
-    })
-    .catch(() => {
-        body.innerHTML = '<div class="alert alert-danger">Chyba pri načítaní fotiek.</div>';
-    });
-}
+function deletePhotoConfirm(photoId){ if (!confirm('Naozaj vymazať túto fotku?')) return; fetch('/?c=Admin&a=delete&section=photos&id=' + encodeURIComponent(photoId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ const body = document.getElementById('photosModalBody'); const imgs = body ? body.querySelectorAll('img') : []; let albumId = null; if (imgs && imgs.length){ const parts = imgs[0].src.split('/'); albumId = parts[parts.length-2]; } if (albumId) openPhotosModal(albumId); else location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
 
-function deletePhotoConfirm(photoId) {
-    if (!confirm('Naozaj vymazať túto fotku?')) return;
-    fetch(`/?c=Admin&a=delete&section=photos&id=${encodeURIComponent(photoId)}`, { method: 'POST' })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            // refresh modal content
-            // try to find currently open album id from modal images' src
-            const body = document.getElementById('photosModalBody');
-            const imgs = body.querySelectorAll('img');
-            let albumId = null;
-            if (imgs.length) {
-                const parts = imgs[0].src.split('/');
-                albumId = parts[parts.length-2];
-            }
-            if (albumId) openPhotosModal(albumId);
-            else location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
-    })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
-}
-
-function deleteAlbumConfirm(albumId) {
-    if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return;
-    fetch(`/?c=Admin&a=delete&section=albums&id=${encodeURIComponent(albumId)}`, { method: 'POST' })
-    .then(res => res.json())
-    .then(data => {
-        if (data.success) {
-            location.reload();
-        } else {
-            alert('Chyba: ' + (data.message || 'Neznáma chyba.'));
-        }
-    })
-    .catch(() => alert('Chyba pri komunikácii so serverom.'));
-}
+function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return; fetch('/?c=Admin&a=delete&section=albums&id=' + encodeURIComponent(albumId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
 </script>

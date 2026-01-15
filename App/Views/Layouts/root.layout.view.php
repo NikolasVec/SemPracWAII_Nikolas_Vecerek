@@ -47,7 +47,7 @@
 
         <!-- Pravé tlačidlá (skryteľné na úzkom displeji) -->
         <div class="d-flex align-items-center nav-right-group" style="gap: 2rem; margin-right: 7vw;">
-            <a class="nav-link px-3" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
+            <a class="nav-link px-3" href="<?= $link->url('home.mapa') ?>"><strong>MAPA</strong></a>
             <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
         </div>
     </div>
@@ -82,7 +82,7 @@
         <div class="list-group">
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
-            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.contact') ?>"><strong>MAPA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.mapa') ?>"><strong>MAPA</strong></a>
             <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
             <?php if ($user->isLoggedIn()) { ?>
                 <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>

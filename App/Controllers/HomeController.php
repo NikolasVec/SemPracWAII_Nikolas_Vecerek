@@ -51,7 +51,7 @@ class HomeController extends BaseController
      *
      * @return Response The response object containing the rendered HTML for the contact page.
      */
-    public function contact(Request $request): Response
+    public function mapa(Request $request): Response
     {
         return $this->html();
     }
