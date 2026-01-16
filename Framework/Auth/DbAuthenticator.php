@@ -31,7 +31,7 @@ class DbAuthenticator extends SessionAuthenticator
         $hash = $row['heslo'] ?? '';
         if ($hash !== '' && password_verify($password, $hash)) {
             $admin = isset($row['admin']) ? (bool)$row['admin'] : false;
-            $kilometres = isset($row['zabehnute_kilometre']) ? (int)$row['zabehnute_kilometre'] : 0;
+            $kilometres = isset($row['zabehnute_kilometre']) ? (float)$row['zabehnute_kilometre'] : 0.0;
             $beers = isset($row['vypite_piva']) ? (int)$row['vypite_piva'] : 0;
             return new DbUser((int)$row['id'], $row['meno'] ?? '', $row['priezvisko'] ?? '', $row['email'] ?? '', $admin, $kilometres, $beers);
         }

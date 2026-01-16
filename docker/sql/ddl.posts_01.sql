@@ -80,7 +80,7 @@ CREATE TABLE `Pouzivatelia` (
     `heslo` VARCHAR(255) NOT NULL,
     `datum_narodenia` DATE NOT NULL,
     `pohlavie` ENUM('M', 'Z') NOT NULL,
-    `zabehnute_kilometre` INT DEFAULT 0,
+    `zabehnute_kilometre` DECIMAL(8,2) DEFAULT 0.00,
     `vypite_piva` INT DEFAULT 0,
     `admin` BOOLEAN NOT NULL DEFAULT 0,
     PRIMARY KEY (`ID_pouzivatela`)

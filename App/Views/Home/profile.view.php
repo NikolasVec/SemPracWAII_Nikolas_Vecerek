@@ -26,7 +26,7 @@ $view->setLayout('root');
                             <dd class="col-sm-8"><?= htmlspecialchars($identity->getEmail()) ?></dd>
 
                             <dt class="col-sm-4">Zabehnuté kilometre</dt>
-                            <dd class="col-sm-8"><?= htmlspecialchars((string)$identity->getKilometres()) ?></dd>
+                            <dd class="col-sm-8"><?= htmlspecialchars(number_format($identity->getKilometres(), 2, '.', '')) ?></dd>
 
                             <dt class="col-sm-4">Počet vypitých pív</dt>
                             <dd class="col-sm-8"><?= htmlspecialchars((string)$identity->getBeers()) ?></dd>

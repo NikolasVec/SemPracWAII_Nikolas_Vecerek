@@ -15,10 +15,10 @@ class DbUser implements IIdentity
     private string $lastName;
     private string $email;
     private bool $admin;
-    private int $kilometres;
+    private float $kilometres;
     private int $beers;
 
-    public function __construct(int $id, string $firstName, string $lastName, string $email, bool $admin = false, int $kilometres = 0, int $beers = 0)
+    public function __construct(int $id, string $firstName, string $lastName, string $email, bool $admin = false, float $kilometres = 0.0, int $beers = 0)
     {
         $this->id = $id;
         $this->firstName = $firstName;
@@ -66,11 +66,11 @@ class DbUser implements IIdentity
         return $this->admin;
     }
 
-    public function getKilometres(): int
+    public function getKilometres(): float
     {
         // In case the object was restored from an older session and the typed property
         // wasn't initialized, guard with isset to avoid "must not be accessed before initialization".
-        return isset($this->kilometres) ? $this->kilometres : 0;
+        return isset($this->kilometres) ? $this->kilometres : 0.0;
     }
 
     public function getBeers(): int
@@ -90,7 +90,7 @@ class DbUser implements IIdentity
             'lastName' => $this->lastName,
             'email' => $this->email,
             'admin' => $this->admin,
-            'kilometres' => $this->kilometres ?? 0,
+            'kilometres' => isset($this->kilometres) ? (float)$this->kilometres : 0.0,
             'beers' => $this->beers ?? 0,
         ];
     }
@@ -102,7 +102,7 @@ class DbUser implements IIdentity
         $this->lastName = (string)($data['lastName'] ?? '');
         $this->email = (string)($data['email'] ?? '');
         $this->admin = (bool)($data['admin'] ?? false);
-        $this->kilometres = isset($data['kilometres']) ? (int)$data['kilometres'] : 0;
+        $this->kilometres = isset($data['kilometres']) ? (float)$data['kilometres'] : 0.0;
         $this->beers = isset($data['beers']) ? (int)$data['beers'] : 0;
     }
 }
