@@ -44,6 +44,9 @@
                 <button class="btn btn-danger" data-section="bezci">Vymazať</button>
             </div>
             <h3>Roky konania</h3>
+            <div class="mb-4">
+                <!-- manual crediting UI removed; crediting is automatic based on DB records -->
+            </div>
             <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
                 <thead>
@@ -338,7 +341,9 @@ const formFields = {
     ],
     roky: [
         {name: 'rok', label: 'Rok', type: 'number', required: true},
-        {name: 'datum_konania', label: 'Dátum konania', type: 'date', required: true}
+        {name: 'datum_konania', label: 'Dátum konania', type: 'date', required: true},
+        {name: 'dlzka_behu', label: 'Dĺžka behu (km)', type: 'number', required: false, step: '0.01'},
+        {name: 'pocet_stanovisk', label: 'Počet stanovísk', type: 'number', required: false, step: '1'}
     ],
     stanoviska: [
         {name: 'nazov', label: 'Názov', type: 'text', required: true},

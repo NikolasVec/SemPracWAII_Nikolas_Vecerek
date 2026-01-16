@@ -74,8 +74,9 @@ class AuthController extends BaseController
      */
     public function logout(Request $request): Response
     {
+        // Terminate the current user session and redirect immediately to the homepage
         $this->app->getAuthenticator()->logout();
-        return $this->html();
+        return $this->redirect($this->url('home.index'));
     }
 
     /**

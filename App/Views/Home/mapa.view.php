@@ -191,65 +191,18 @@ function normalize_map_link($s) {
     }
      </style>
 
-<!-- Modal for showing stanovisko details -->
-<div class="modal fade" id="stanoviskoModal" tabindex="-1" aria-labelledby="stanoviskoModalLabel" aria-hidden="true">
-  <div class="modal-dialog modal-lg modal-dialog-centered">
-    <div class="modal-content">
-      <div class="modal-header">
-        <h5 class="modal-title" id="stanoviskoModalLabel">Detaily stanoviska</h5>
-        <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Zavrieť"></button>
-      </div>
-      <div class="modal-body">
-        <p id="modal-poloha" class="text-muted"></p>
-        <div id="modal-popis"></div>
-        <p id="modal-mapa" class="mt-2"></p>
-        <div class="mt-3 text-center">
-          <img id="modal-image" src="" alt="" class="img-fluid" style="max-height:300px; display:none;" />
-        </div>
-      </div>
-      <div class="modal-footer">
-        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Zavrieť</button>
-      </div>
-    </div>
-  </div>
-</div>
-
 <script>
 (function(){
-    const modalEl = document.getElementById('stanoviskoModal');
-    if (!modalEl) return;
-    const bsModal = new bootstrap.Modal(modalEl);
+    // Large bootstrap modal was removed intentionally; this script uses window.open for external links instead.
 
-    // Ensure anchor clicks inside list items don't trigger the parent item click handler
-    document.querySelectorAll('.list-group-item-action a').forEach(function(a){
-        a.addEventListener('click', function(ev){
-            // allow default navigation but prevent the click from bubbling to the list item
-            ev.stopPropagation();
-        });
-    });
-
-    // helper to set modal image: normalize simple filenames to /images/{name}, keep absolute URLs, hide on error
-    function setModalImage(im, alt) {
-        const imgEl = document.getElementById('modal-image');
-        if (!imgEl) return;
-        if (!im) {
-            imgEl.src = '';
-            imgEl.style.display = 'none';
-            imgEl.onerror = null;
-            return;
-        }
-        // normalize: if doesn't start with http(s) or slash, assume it's a filename in /images/
-        var src = im;
-        if (!/^\s*(https?:\/\/|\/)/i.test(im)) {
-            src = '/images/' + im.replace(/^\/+/, '');
-        }
-        imgEl.onerror = function() { imgEl.style.display = 'none'; imgEl.src = ''; imgEl.onerror = null; };
-        imgEl.src = src;
-        imgEl.alt = alt || 'Obrázok stanoviska';
-        imgEl.style.display = 'block';
+    // helper to normalize simple filenames to an image src (same logic as previous modal helper)
+    function normalizeImgSrc(im) {
+        if (!im) return '';
+        if (/^\s*(https?:\/\/|\/)/i.test(im)) return im.trim();
+        return '/images/' + im.replace(/^\/+/, '').trim();
     }
 
-     // Clicking a list item will try to find its marker on the map and show the bubble there
+    // Clicking a list item will try to find its marker on the map and show the bubble there
     document.querySelectorAll('.list-group-item-action').forEach(function(el){
         el.addEventListener('click', function(ev){
             // If the user clicked a real link inside the item, let it behave normally
@@ -266,28 +219,16 @@ function normalize_map_link($s) {
                     return;
                 }
             }
-            // fallback: open modal
-            const na = el.dataset.nazov || '';
-            const po = el.dataset.poloha || '';
-            const pop = el.dataset.popis || '';
+            // fallback: open external map link in new tab (or image if map is not available)
             const ma = el.dataset.mapa || '';
             const im = el.dataset.image || '';
-            document.getElementById('stanoviskoModalLabel').textContent = na || 'Detaily stanoviska';
-            document.getElementById('modal-poloha').textContent = po;
-            document.getElementById('modal-popis').innerHTML = pop ? pop.replace(/\n/g, '<br/>') : '';
-            const mapaEl = document.getElementById('modal-mapa');
-            if (ma) mapaEl.innerHTML = '<a href="' + ma + '" target="_blank" rel="noopener noreferrer">Otvoriť v mape</a>'; else mapaEl.innerHTML = '';
-            setModalImage(im, na);
-            bsModal.show();
-        });
-    });
-
-    // function to normalize simple filenames to an image src (same logic as modal helper)
-    function normalizeImgSrc(im) {
-        if (!im) return '';
-        if (/^\s*(https?:\/\/|\/)/i.test(im)) return im.trim();
-        return '/images/' + im.replace(/^\/+/, '').trim();
-    }
+            if (ma) {
+                window.open(ma, '_blank', 'noopener');
+            } else if (im) {
+                window.open(normalizeImgSrc(im), '_blank', 'noopener');
+            }
+         });
+     });
 
     // escape text for safe insertion inside small bubble
     function escHtml(str) {
@@ -320,7 +261,7 @@ function normalize_map_link($s) {
         // Use a template literal to avoid nested-quote escaping issues
         const imgHtml = im ? `<img src="${escHtml(normalizeImgSrc(im))}" alt="${escHtml(na)}" style="width:80px;height:80px;object-fit:cover;margin-right:8px;border-radius:4px;" onerror="this.style.display='none'"/>` : '';
         const popHtml = pop ? `${escHtml(pop).replace(/\n/g,'<br/>')}` : '';
-        const mapLinkHtml = ma ? `<div class="mt-2"><a href="${escHtml(ma)}" target="_blank" rel="noopener noreferrer">Otvoriť v mape</a></div>` : '';
+        const mapLinkHtml = ma ? `<div class="mt-2"><a href="${escHtml(ma)}" target="_blank" rel="noopener noreferrer">Otvoriť v GoogleMaps</a></div>` : '';
 
         let html = `
             <div class="bubble-card p-2">
@@ -345,15 +286,13 @@ function normalize_map_link($s) {
             bubbleCard.style.cursor = 'pointer';
             bubbleCard.addEventListener('click', function(ev){
                 ev.stopPropagation();
-                // open full modal with same data
-                document.getElementById('stanoviskoModalLabel').textContent = na || 'Detaily stanoviska';
-                document.getElementById('modal-poloha').textContent = po;
-                document.getElementById('modal-popis').innerHTML = pop ? pop.replace(/\n/g, '<br/>') : '';
-                const mapaEl = document.getElementById('modal-mapa');
-                if (ma) mapaEl.innerHTML = '<a href="' + ma + '" target="_blank" rel="noopener noreferrer">Otvoriť v mape</a>'; else mapaEl.innerHTML = '';
-                setModalImage(im, na);
+                // open external map (or image) in new tab instead of large modal
+                if (ma) {
+                    window.open(ma, '_blank', 'noopener');
+                } else if (im) {
+                    window.open(normalizeImgSrc(im), '_blank', 'noopener');
+                }
                 hideBubble();
-                bsModal.show();
             });
         }
 

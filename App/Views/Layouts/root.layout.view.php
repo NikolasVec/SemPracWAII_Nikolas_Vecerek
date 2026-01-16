@@ -56,8 +56,7 @@
     <div class="d-flex align-items-center ms-1 nav-auth-group" style="min-width: 90px;">
         <?php if ($user->isLoggedIn()) { ?>
             <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
-                <!-- Admins: show Log out in navbar and icon leading to admin dashboard -->
-                <a class="nav-link" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+                <!-- Admins: show admin icon in navbar (Log out is available in the hamburger/offcanvas menu) -->
                 <a class="nav-link navbar-text me-2" href="<?= $link->url('admin.index') ?>" title="Admin">
                     <i class="bi bi-person fs-3"></i>
                 </a>

@@ -117,7 +117,7 @@ class HomeController extends BaseController
                         $id_roka = $row['ID_roka'];
                     } else {
                         // Ak neexistuje, vytvor nový záznam
-                        $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov) VALUES (?, ?, 0)');
+                        $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov, pocet_stanovisk) VALUES (?, ?, 0, 0)');
                         $stmt->execute([$rok, date('Y-m-d')]);
                         $id_roka = $conn->lastInsertId();
                     }
@@ -184,6 +184,13 @@ class HomeController extends BaseController
             $stmtF = $conn->prepare('SELECT meno, priezvisko, cas_dobehnutia FROM Bezec WHERE pohlavie = ? AND ID_roka = ? ORDER BY (cas_dobehnutia IS NULL), cas_dobehnutia ASC');
             $stmtF->execute(['Ž', $resultsYear]);
             $femaleResults = $stmtF->fetchAll();
+
+
+            // --- credit matching user accounts: removed ---
+            // The previous implementation updated Pouzivatelia.zabehnute_kilometre and Pouzivatelia.vypite_piva here.
+            // That logic has been intentionally removed so it can be redesigned and implemented elsewhere.
+            // No database writes are performed in this controller action.
+
         }
 
         return $this->html([

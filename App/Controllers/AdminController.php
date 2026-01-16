@@ -164,13 +164,19 @@ class AdminController extends BaseController
             } elseif ($section === 'roky') {
                 $rok = trim($_POST['rok'] ?? '');
                 $datum = trim($_POST['datum_konania'] ?? '');
+                $dlzka = trim($_POST['dlzka_behu'] ?? '');
+                // normalize to numeric value (DB column dlzka_behu is DECIMAL NOT NULL DEFAULT 0.00)
+                $dlzkaVal = ($dlzka === '' ? 0.0 : (is_numeric($dlzka) ? (float)$dlzka : 0.0));
+                $pocetStan = trim($_POST['pocet_stanovisk'] ?? '');
+                $pocetStanVal = ($pocetStan === '' ? 0 : (is_numeric($pocetStan) ? (int)$pocetStan : 0));
 
                 if ($rok === '' || $datum === '') {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
 
-                $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov) VALUES (?, ?, 0)');
-                $stmt->execute([$rok, $datum]);
+                // include dlzka_behu column (may be empty) - DB column is dlzka_behu
+                $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov, dlzka_behu, pocet_stanovisk) VALUES (?, ?, 0, ?, ?)');
+                $stmt->execute([$rok, $datum, $dlzkaVal, $pocetStanVal]);
                 $ID_roka = $conn->query('SELECT LAST_INSERT_ID()')->fetchColumn();
 
                 // compute participants count (should be zero just after insert, but kept for consistency)
@@ -186,7 +192,7 @@ class AdminController extends BaseController
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
-                $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? '');
+                $obrazok_odkaz = trim($_POST['obrazok_odzak'] ?? '');
                 // optional relative positions on the admin map image (0..1)
                 $x_pos = trim($_POST['x_pos'] ?? '');
                 $y_pos = trim($_POST['y_pos'] ?? '');
@@ -198,7 +204,7 @@ class AdminController extends BaseController
 
                 // convert empty strings to NULL so DB can store default NULL
                 $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
-                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
+                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odzak;
                 $xVal = ($x_pos === '' ? null : (is_numeric($x_pos) ? $x_pos : null));
                 $yVal = ($y_pos === '' ? null : (is_numeric($y_pos) ? $y_pos : null));
 
@@ -383,20 +389,24 @@ class AdminController extends BaseController
             } elseif ($section === 'roky') {
                 $rok = trim($_POST['rok'] ?? '');
                 $datum = trim($_POST['datum_konania'] ?? '');
+                $dlzka = trim($_POST['dlzka_behu'] ?? '');
+                $dlzkaVal = ($dlzka === '' ? 0.0 : (is_numeric($dlzka) ? (float)$dlzka : 0.0));
+                $pocetStan = trim($_POST['pocet_stanovisk'] ?? '');
+                $pocetStanVal = ($pocetStan === '' ? 0 : (is_numeric($pocetStan) ? (int)$pocetStan : 0));
 
                 if ($rok === '' || $datum === '') {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
 
-                $stmt = $conn->prepare('UPDATE rokKonania SET rok=?, datum_konania=? WHERE ID_roka=?');
-                $stmt->execute([$rok, $datum, $id]);
+                $stmt = $conn->prepare('UPDATE rokKonania SET rok=?, datum_konania=?, dlzka_behu=?, pocet_stanovisk=? WHERE ID_roka=?');
+                $stmt->execute([$rok, $datum, $dlzkaVal, $pocetStanVal, $id]);
 
             } elseif ($section === 'stanoviska') {
                 $nazov = trim($_POST['nazov'] ?? '');
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
-                $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? '');
+                $obrazok_odkaz = trim($_POST['obrazok_odzak'] ?? '');
                 $x_pos = trim($_POST['x_pos'] ?? '');
                 $y_pos = trim($_POST['y_pos'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
@@ -406,7 +416,7 @@ class AdminController extends BaseController
                 }
 
                 $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
-                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
+                $obrazokVal = $obrazok_odzak === '' ? null : $obrazok_odzak;
                 $xVal = ($x_pos === '' ? null : (is_numeric($x_pos) ? $x_pos : null));
                 $yVal = ($y_pos === '' ? null : (is_numeric($y_pos) ? $y_pos : null));
 
@@ -456,6 +466,8 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
     }
+
+    // Manual admin crediting endpoints were removed. Crediting is now performed automatically when public results are generated.
 
     // --- New gallery-related actions ---
 
