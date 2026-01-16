@@ -570,7 +570,7 @@ function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album 
         html += '<div class="admin-map-picker mt-3">';
         html += '<div class="mb-2"><small class="text-muted">Vyberte pozíciu na mape (kliknutím) alebo zadajte čísla (0..1).</small></div>';
         html += '<div style="position:relative; display:inline-block; max-width:100%;">';
-        html += '<img id="adminMapImg" src="/images/mapa_Martin.png" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
+        html += '<img id="adminMapImg" src="/images/mapa_MartinNEW.png" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
         html += '<div id="adminMapMarker" style="position:absolute;width:14px;height:14px;border-radius:7px;background:rgba(220,53,69,0.9);border:2px solid white;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>';
         html += '</div>';
         html += '<div class="mt-2"><button type="button" id="clearMapPos" class="btn btn-sm btn-outline-secondary">Vymazať pozíciu</button></div>';

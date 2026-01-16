@@ -111,8 +111,8 @@ function normalize_map_link($s) {
             <br>
             <div class="card">
                 <div class="card-body p-0" style="background:#f8f9fa;">
-                    <div id="mapImageContainer" style="position:relative; --marker-offset-x: -30%; --marker-offset-y: -90%;">
-                        <img id="mapImg" src="/images/mapa_Martin.png" alt="Mapa Martin" class="img-fluid w-100" style="max-height:600px; object-fit:contain; display:block;">
+                    <div id="mapImageContainer" style="position:relative; --marker-offset-x: -25%; --marker-offset-y: -90%;">
+                        <img id="mapImg" src="/images/mapa_MartinNEW.png" alt="Mapa Martin" class="img-fluid w-100" style="max-height:600px; object-fit:contain; display:block;">
                         <?php if (!empty($stanoviska) && is_array($stanoviska)): ?>
                             <?php foreach ($stanoviska as $s): ?>
                                 <?php
@@ -159,8 +159,8 @@ function normalize_map_link($s) {
     /* Marker design: rounded pill with beer icon and small diamond pointer */
     .overlay-marker .marker-shape {
         position:relative;
-        width:50px;
-        height:50px;
+        width:45px;
+        height:45px;
         border-radius:8px;
         background: linear-gradient(180deg, #ff5252 0%, #b71c1c 100%);
         display:flex;
@@ -172,7 +172,8 @@ function normalize_map_link($s) {
         z-index:1; /* keep marker above its pointer */
     }
     /* Shift markers slightly to the right and higher than the stored coordinates. Tunable via CSS variables on #mapImageContainer. */
-    .overlay-marker { transform: translate(var(--marker-offset-x, -40%), var(--marker-offset-y, -70%)); }
+    /* Adjusted defaults so markers appear more to the right (smaller negative X translate). */
+    .overlay-marker { transform: translate(var(--marker-offset-x, -10%), var(--marker-offset-y, -90%)); }
     .overlay-marker .marker-shape img { width:60%; height:60%; object-fit:contain; display:block; }
     /* small pointer under the marker (diamond rotated) */
     .overlay-marker .marker-shape::after {
@@ -219,6 +220,14 @@ function normalize_map_link($s) {
     if (!modalEl) return;
     const bsModal = new bootstrap.Modal(modalEl);
 
+    // Ensure anchor clicks inside list items don't trigger the parent item click handler
+    document.querySelectorAll('.list-group-item-action a').forEach(function(a){
+        a.addEventListener('click', function(ev){
+            // allow default navigation but prevent the click from bubbling to the list item
+            ev.stopPropagation();
+        });
+    });
+
     // helper to set modal image: normalize simple filenames to /images/{name}, keep absolute URLs, hide on error
     function setModalImage(im, alt) {
         const imgEl = document.getElementById('modal-image');
@@ -243,6 +252,10 @@ function normalize_map_link($s) {
      // Clicking a list item will try to find its marker on the map and show the bubble there
     document.querySelectorAll('.list-group-item-action').forEach(function(el){
         el.addEventListener('click', function(ev){
+            // If the user clicked a real link inside the item, let it behave normally
+            if (ev.target && ev.target.closest && ev.target.closest('a')) {
+                return; // allow anchor default navigation (e.g. open map link)
+            }
             ev.preventDefault();
             const id = el.dataset.id || null;
             if (id) {
