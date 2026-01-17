@@ -161,6 +161,54 @@
     </div>
 </div>
 
+<!-- Sponsors management -->
+<div class="container-fluid mt-4">
+    <h3>Sponzori (footer)</h3>
+    <div class="table-scroll-wrapper">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <th>ID</th>
+                    <th>Názov</th>
+                    <th>Kontakt Email</th>
+                    <th>Kontakt Telefón</th>
+                    <th>Logo</th>
+                    <th>URL</th>
+                    <th>Vytvorené</th>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($sponsors)): ?>
+                    <?php foreach ($sponsors as $sp): ?>
+                        <tr>
+                            <td><?= htmlspecialchars((string)($sp['ID_sponsor'] ?? '')) ?></td>
+                            <td><?= htmlspecialchars((string)($sp['name'] ?? '')) ?></td>
+                            <td><?= htmlspecialchars((string)($sp['contact_email'] ?? '')) ?></td>
+                            <td><?= htmlspecialchars((string)($sp['contact_phone'] ?? '')) ?></td>
+                            <td>
+                                <?php if (!empty($sp['logo'])): ?>
+                                    <img src="<?= isset($link) ? $link->asset('images/sponsors/' . $sp['logo']) : '/images/sponsors/' . $sp['logo'] ?>" alt="logo" style="height:48px; object-fit:contain;" />
+                                <?php else: ?>
+                                    <span class="text-muted">Žiadne</span>
+                                <?php endif; ?>
+                            </td>
+                            <td><?= htmlspecialchars((string)($sp['url'] ?? '')) ?></td>
+                            <td><?= htmlspecialchars((string)($sp['created_at'] ?? '')) ?></td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="7">Žiadni sponzori</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <div class="mb-4">
+        <button class="btn btn-primary" onclick="openAddModal('sponsors')">Pridať</button>
+        <button class="btn btn-warning" data-section="sponsors">Upraviť</button>
+        <button class="btn btn-danger" data-section="sponsors">Vymazať</button>
+    </div>
+</div>
+
 <!-- Modal pre pridanie záznamu -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -354,6 +402,13 @@ const formFields = {
         {name: 'x_pos', label: 'X (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
         {name: 'y_pos', label: 'Y (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
         {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
+    ],
+    sponsors: [
+        {name: 'name', label: 'Názov', type: 'text', required: true},
+        {name: 'contact_email', label: 'Kontakt email', type: 'email', required: false},
+        {name: 'contact_phone', label: 'Kontakt telefón', type: 'text', required: false},
+        {name: 'url', label: 'URL (web)', type: 'text', required: false},
+        {name: 'logo', label: 'Logo (obrázok)', type: 'file', required: false}
     ]
 };
 
@@ -435,6 +490,7 @@ function openDeleteModal(section) {
                     if (window.currentDeleteSection === 'bezci') info = data.item.meno + ' ' + data.item.priezvisko;
                     else if (window.currentDeleteSection === 'roky') info = 'rok ' + data.item.rok;
                     else if (window.currentDeleteSection === 'stanoviska') info = data.item.nazov;
+                    else if (window.currentDeleteSection === 'sponsors') info = data.item.name;
 
                     if (confirm('Naozaj chcete vymazať záznam: ' + info + '?')) {
                         fetch('/?c=Admin&a=delete&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id), { method: 'POST' })
@@ -488,6 +544,14 @@ function openDeleteModal(section) {
                             html += '</select>';
                         } else if (field.type === 'textarea') {
                             html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '>' + value + '</textarea>';
+                        } else if (field.type === 'file') {
+                            // file input - cannot set value programmatically; show existing filename if present
+                            html += '<input class="form-control" type="file" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+                            if (data.item[field.name]) {
+                                html += '<div class="mt-1 small text-muted">Aktuálny súbor: ' + (data.item[field.name] || data.item['logo'] || '') + '</div>';
+                            } else if (data.item.logo && field.name === 'logo') {
+                                html += '<div class="mt-1 small text-muted">Aktuálny súbor: ' + (data.item.logo) + '</div>';
+                            }
                         } else {
                             html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '" value="' + value + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
                         }

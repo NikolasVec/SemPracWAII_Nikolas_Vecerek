@@ -77,6 +77,18 @@ class AdminController extends BaseController
             $albums = [];
         }
 
+        // --- Fetch sponsors table for admin management (if exists) ---
+        $sponsors = [];
+        try {
+            $stmt = $conn->query("SHOW TABLES LIKE 'sponsors'");
+            $sponsorsTableExists = $stmt->fetchColumn() !== false;
+            if ($sponsorsTableExists) {
+                $sponsors = $conn->query('SELECT * FROM sponsors ORDER BY created_at DESC')->fetchAll();
+            }
+        } catch (\Throwable $e) {
+            $sponsors = [];
+        }
+
         // compute upload/post size limits (convert shorthand like '2M' to bytes)
         $parseIniBytes = function($val) {
             $val = trim($val);
@@ -100,6 +112,7 @@ class AdminController extends BaseController
             'stanoviska' => $stanoviska,
             'currentResultsYear' => $currentResultsYear,
             'albums' => $albums,
+            'sponsors' => $sponsors,
             'upload_max_bytes' => $uploadMaxBytes,
             'post_max_bytes' => $postMaxBytes
         ]);
@@ -212,6 +225,45 @@ class AdminController extends BaseController
                 $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka, $xVal, $yVal]);
 
                 return $this->json(['success' => true]);
+            } elseif ($section === 'sponsors') {
+                // create sponsors table if not exists
+                $conn->exec("CREATE TABLE IF NOT EXISTS sponsors (ID_sponsor INT AUTO_INCREMENT PRIMARY KEY, name VARCHAR(255), contact_email VARCHAR(255), contact_phone VARCHAR(100), logo VARCHAR(255), url VARCHAR(1000), created_at DATETIME DEFAULT CURRENT_TIMESTAMP)");
+
+                $name = trim($_POST['name'] ?? '');
+                $contact_email = trim($_POST['contact_email'] ?? '');
+                $contact_phone = trim($_POST['contact_phone'] ?? '');
+                $url = trim($_POST['url'] ?? '');
+
+                if ($name === '') {
+                    return $this->json(['success' => false, 'message' => 'Názov sponzora je povinný.']);
+                }
+
+                // handle optional logo upload
+                $projectRoot = dirname(dirname(__DIR__));
+                $publicDir = $projectRoot . DIRECTORY_SEPARATOR . 'public';
+                $sponsorsDir = $publicDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'sponsors';
+                if (!is_dir($sponsorsDir)) {
+                    @mkdir($sponsorsDir, 0755, true);
+                }
+
+                $logoFilename = null;
+                if (!empty($_FILES['logo']) && ($_FILES['logo']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $tmp = $_FILES['logo']['tmp_name'];
+                    $orig = basename($_FILES['logo']['name']);
+                    $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+                    if (in_array($ext, ['jpg','jpeg','png','gif'])) {
+                        $logoFilename = uniqid('sponsor_', true) . '.' . $ext;
+                        $target = $sponsorsDir . DIRECTORY_SEPARATOR . $logoFilename;
+                        if (!move_uploaded_file($tmp, $target)) {
+                            $logoFilename = null; // ignore logo on failure
+                        }
+                    }
+                }
+
+                $stmt = $conn->prepare('INSERT INTO sponsors (name, contact_email, contact_phone, logo, url, created_at) VALUES (?, ?, ?, ?, ?, NOW())');
+                $stmt->execute([$name, $contact_email ?: null, $contact_phone ?: null, $logoFilename ?: null, $url ?: null]);
+
+                return $this->json(['success' => true]);
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
             }
@@ -289,10 +341,29 @@ class AdminController extends BaseController
                 $stmt = $conn->prepare('DELETE FROM albums WHERE ID_album = ?');
                 $stmt->execute([$albumId]);
             } else {
-                return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
-            }
+                // sponsors deletion
+                if ($section === 'sponsors') {
+                    $stmt = $conn->prepare('SELECT logo FROM sponsors WHERE ID_sponsor = ? LIMIT 1');
+                    $stmt->execute([$id]);
+                    $row = $stmt->fetch();
+                    if ($row) {
+                        $logo = $row['logo'];
+                        if ($logo) {
+                            $projectRoot = dirname(dirname(__DIR__));
+                            $filePath = $projectRoot . DIRECTORY_SEPARATOR . 'public' . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'sponsors' . DIRECTORY_SEPARATOR . $logo;
+                            if (is_file($filePath)) {@unlink($filePath);}
+                        }
+                        $del = $conn->prepare('DELETE FROM sponsors WHERE ID_sponsor = ?');
+                        $del->execute([$id]);
+                    } else {
+                        return $this->json(['success' => false, 'message' => 'Sponzor neexistuje.']);
+                    }
+                } else {
+                     return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+                }
+             }
 
-            return $this->json(['success' => true]);
+             return $this->json(['success' => true]);
         } catch (\Throwable $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }
@@ -320,7 +391,11 @@ class AdminController extends BaseController
             } elseif ($section === 'stanoviska') {
                 $stmt = $conn->prepare('SELECT * FROM Stanovisko WHERE ID_stanoviska = ?');
             } else {
-                return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+                if ($section === 'sponsors') {
+                    $stmt = $conn->prepare('SELECT * FROM sponsors WHERE ID_sponsor = ?');
+                } else {
+                     return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
+                }
             }
 
             $stmt->execute([$id]);
@@ -406,7 +481,7 @@ class AdminController extends BaseController
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
-                $obrazok_odkaz = trim($_POST['obrazok_odzak'] ?? '');
+                $obrazok_odzak = trim($_POST['obrazok_odzak'] ?? '');
                 $x_pos = trim($_POST['x_pos'] ?? '');
                 $y_pos = trim($_POST['y_pos'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
@@ -422,6 +497,58 @@ class AdminController extends BaseController
 
                 $stmt = $conn->prepare('UPDATE Stanovisko SET nazov=?, poloha=?, popis=?, mapa_odkaz=?, obrazok_odkaz=?, ID_roka=?, x_pos=?, y_pos=? WHERE ID_stanoviska=?');
                 $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, $ID_roka, $xVal, $yVal, $id]);
+
+            } elseif ($section === 'sponsors') {
+                $name = trim($_POST['name'] ?? '');
+                $contact_email = trim($_POST['contact_email'] ?? '');
+                $contact_phone = trim($_POST['contact_phone'] ?? '');
+                $url = trim($_POST['url'] ?? '');
+
+                if ($name === '') {
+                    return $this->json(['success' => false, 'message' => 'Názov sponzora je povinný.']);
+                }
+
+                // handle optional logo upload and delete previous logo if replaced
+                $projectRoot = dirname(dirname(__DIR__));
+                $publicDir = $projectRoot . DIRECTORY_SEPARATOR . 'public';
+                $sponsorsDir = $publicDir . DIRECTORY_SEPARATOR . 'images' . DIRECTORY_SEPARATOR . 'sponsors';
+                if (!is_dir($sponsorsDir)) {
+                    @mkdir($sponsorsDir, 0755, true);
+                }
+
+                // fetch current logo filename
+                $oldLogo = null;
+                try {
+                    $cur = $conn->prepare('SELECT logo FROM sponsors WHERE ID_sponsor = ? LIMIT 1');
+                    $cur->execute([$id]);
+                    $row = $cur->fetch();
+                    if ($row) $oldLogo = $row['logo'];
+                } catch (\Throwable $e) {
+                    // ignore
+                }
+
+                $logoFilename = $oldLogo;
+                if (!empty($_FILES['logo']) && ($_FILES['logo']['error'] ?? UPLOAD_ERR_NO_FILE) === UPLOAD_ERR_OK) {
+                    $tmp = $_FILES['logo']['tmp_name'];
+                    $orig = basename($_FILES['logo']['name']);
+                    $ext = strtolower(pathinfo($orig, PATHINFO_EXTENSION));
+                    if (in_array($ext, ['jpg','jpeg','png','gif'])) {
+                        $newName = uniqid('sponsor_', true) . '.' . $ext;
+                        $target = $sponsorsDir . DIRECTORY_SEPARATOR . $newName;
+                        if (move_uploaded_file($tmp, $target)) {
+                            $logoFilename = $newName;
+                            // delete old file if different
+                            if ($oldLogo && $oldLogo !== $logoFilename) {
+                                $oldPath = $sponsorsDir . DIRECTORY_SEPARATOR . $oldLogo;
+                                if (is_file($oldPath)) @unlink($oldPath);
+                            }
+                        }
+                    }
+                }
+
+                // Update sponsor fields, logo may be new or same
+                $stmt = $conn->prepare('UPDATE sponsors SET name=?, contact_email=?, contact_phone=?, logo=?, url=? WHERE ID_sponsor=?');
+                $stmt->execute([$name, $contact_email ?: null, $contact_phone ?: null, $logoFilename ?: null, $url ?: null, $id]);
 
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);

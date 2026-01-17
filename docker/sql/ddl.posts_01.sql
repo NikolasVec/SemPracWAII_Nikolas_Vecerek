@@ -13,6 +13,7 @@ DROP TABLE IF EXISTS Bezec;
 DROP TABLE IF EXISTS Stanovisko;
 DROP TABLE IF EXISTS `rokKonania`;
 DROP TABLE IF EXISTS `Pouzivatelia`;
+DROP TABLE IF EXISTS `sponsors`;
 
 -- Tabuľka rokKonania
 CREATE TABLE `rokKonania`
@@ -87,6 +88,19 @@ CREATE TABLE `Pouzivatelia` (
 )  ENGINE=InnoDB
    DEFAULT CHARSET = utf8mb4;
 
+-- Tabuľka sponzorov (footer)
+CREATE TABLE `sponsors` (
+    `ID_sponsor` INT NOT NULL AUTO_INCREMENT,
+    `name` VARCHAR(255) NOT NULL,
+    `contact_email` VARCHAR(255) DEFAULT NULL,
+    `contact_phone` VARCHAR(100) DEFAULT NULL,
+    `logo` VARCHAR(255) DEFAULT NULL,
+    `url` VARCHAR(1000) DEFAULT NULL,
+    `created_at` DATETIME DEFAULT CURRENT_TIMESTAMP,
+    PRIMARY KEY (`ID_sponsor`)
+) ENGINE=InnoDB
+  DEFAULT CHARSET = utf8mb4;
+
 SET foreign_key_checks = 1;
 
 -- Príklad vloženia údajov
@@ -123,6 +137,10 @@ VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
 INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`, `admin`)
 VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0, 1),
        ('Nikolas', 'Večerek', 'nikove17@gmail.com','$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', '2003-10-07', 'M', 0, 0, 0);
+
+-- Example sponsor
+INSERT INTO sponsors (name, contact_email, contact_phone, logo, url)
+VALUES ('Príklad sponzora', 'kontakt@priklad.sk', '+421900000000', NULL, 'https://priklad.sk');
 
 -- Trigger na automatickú aktualizáciu počtu účastníkov v rokKonania
 DELIMITER //

@@ -1,3 +1,24 @@
+/* Ensure full-bleed layouts have no browser-default whitespace */
+html, body {
+    margin: 0;
+    padding: 0;
+}
+
+/* Make footer truly full-bleed regardless of parent containers */
+.site-footer {
+    position: relative;
+    left: 50%;
+    transform: translateX(-50%);
+    width: 100vw; /* cover viewport width */
+    box-sizing: border-box;
+    z-index: 0;
+}
+
+.site-footer > .container-fluid {
+    padding-left: 0;
+    padding-right: 0;
+}
+
 .navbar {
     border-bottom: 1px solid gray;
     background: #ffce0a !important;
@@ -209,5 +230,7 @@ table.table td, table.table th {
         height: 46px;
     }
 }
+
+
 
 

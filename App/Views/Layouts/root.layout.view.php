@@ -104,5 +104,8 @@
         <?= $contentHTML ?>
     </div>
 </div>
+
+<?php // include footer ?>
+<?php try { include __DIR__ . '/footer.view.php'; } catch (\Throwable $e) { /* ignore if missing */ } ?>
 </body>
 </html>
