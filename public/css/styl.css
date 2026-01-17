@@ -304,4 +304,24 @@ table.table td, table.table th {
     }
 }
 
+/* Cards on home page: use event accent color */
+.home-card {
+    background: #ffcf0f !important; /* force requested color to override Bootstrap utilities */
+    background-color: #ffcf0f !important;
+    color: #111 !important; /* dark text for contrast */
+    border: 1px solid rgba(0,0,0,0.06);
+    border-radius: 6px;
+    transition: transform .12s ease, box-shadow .12s ease;
+    padding: 1rem !important; /* ensure inner spacing if overridden */
+}
+.home-card:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+}
+
+/* Ensure anchor wrapping a card doesn't change background */
+a.text-decoration-none > .home-card {
+    display: block;
+}
+
 
