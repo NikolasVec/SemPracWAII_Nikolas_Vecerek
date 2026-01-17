@@ -6,12 +6,18 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col">
-            <div>
-                <br><br><br>
-                Welcome, <strong><?= $user->getName() ?></strong>!<br><br>
-                This part of the application is accessible only after logging in.
-            </div>
-            <hr>
+            <!-- Admin sections navigation -->
+            <nav class="admin-nav mb-3">
+              <div class="btn-group" role="group" aria-label="Admin sections">
+                <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="bezci" onclick="showSection('bezci')">Bežci</button>
+                <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="roky" onclick="showSection('roky')">Roky</button>
+                <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="stanoviska" onclick="showSection('stanoviska')">Stanovištia</button>
+                <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="gallery" onclick="showSection('gallery')">Galéria</button>
+                <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="sponsors" onclick="showSection('sponsors')">Sponzori</button>
+              </div>
+            </nav>
+
+            <div class="admin-section" data-section="bezci">
             <h3>Bežci</h3>
             <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
@@ -43,6 +49,9 @@
                 <button class="btn btn-warning" data-section="bezci">Upraviť</button>
                 <button class="btn btn-danger" data-section="bezci">Vymazať</button>
             </div>
+            </div> <!-- end section bezci -->
+
+            <div class="admin-section" data-section="roky">
             <h3>Roky konania</h3>
             <div class="mb-4">
                 <!-- manual crediting UI removed; crediting is automatic based on DB records -->
@@ -89,6 +98,9 @@
                 <button class="btn btn-warning" data-section="roky">Upraviť</button>
                 <button class="btn btn-danger" data-section="roky">Vymazať</button>
             </div>
+            </div> <!-- end section roky -->
+
+            <div class="admin-section" data-section="stanoviska">
             <h3>Stanoviská</h3>
             <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
@@ -120,7 +132,9 @@
                 <button class="btn btn-warning" data-section="stanoviska">Upraviť</button>
                 <button class="btn btn-danger" data-section="stanoviska">Vymazať</button>
             </div>
+            </div> <!-- end section stanoviska -->
 
+            <div class="admin-section" data-section="gallery">
             <h3>Galéria (albumy)</h3>
             <div class="mb-3">
                 <button class="btn btn-success" onclick="openCreateAlbumModal()">Vytvoriť album</button>
@@ -157,11 +171,13 @@
                     </tbody>
                 </table>
             </div>
+            </div> <!-- end section gallery -->
         </div>
     </div>
 </div>
 
 <!-- Sponsors management -->
+<div class="admin-section" data-section="sponsors">
 <div class="container-fluid mt-4">
     <h3>Sponzori (footer)</h3>
     <div class="table-scroll-wrapper">
@@ -208,6 +224,7 @@
         <button class="btn btn-danger" data-section="sponsors">Vymazať</button>
     </div>
 </div>
+</div> <!-- end section sponsors -->
 
 <!-- Modal pre pridanie záznamu -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
@@ -306,12 +323,12 @@
       <form id="createAlbumForm">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Názov *</label>
-            <input class="form-control" name="name" required />
+            <label class="form-label" for="createAlbumName">Názov *</label>
+            <input id="createAlbumName" class="form-control" name="name" required>
           </div>
           <div class="mb-3">
-            <label class="form-label">Popis</label>
-            <textarea class="form-control" name="description"></textarea>
+            <label class="form-label" for="createAlbumDescription">Popis</label>
+            <textarea id="createAlbumDescription" class="form-control" name="description"></textarea>
           </div>
         </div>
         <div class="modal-footer">
@@ -334,7 +351,7 @@
       <form id="uploadForm" enctype="multipart/form-data">
         <div class="modal-body">
           <div class="mb-3">
-            <label class="form-label">Album</label>
+            <label class="form-label" for="uploadAlbumSelect">Album</label>
             <select id="uploadAlbumSelect" name="album_id" class="form-select" required>
                 <?php if (!empty($albums)): ?>
                     <?php foreach ($albums as $alb): ?>
@@ -345,7 +362,7 @@
             </select>
           </div>
           <div class="mb-3">
-            <label class="form-label">Fotky (môžete vybrať viac súborov)</label>
+            <label class="form-label" for="photosInput">Fotky (môžete vybrať viac súborov)</label>
             <input type="file" name="photos[]" id="photosInput" accept="image/*" multiple class="form-control" required>
           </div>
         </div>
@@ -375,6 +392,46 @@
     </div>
   </div>
 </div>
+
+<style>
+/* simple admin section show/hide */
+.admin-section{ display:none; }
+.admin-section.active{ display:block; }
+.admin-nav-btn.active{ box-shadow: inset 0 -3px 0 rgba(0,123,255,0.25); }
+</style>
+
+<script>
+// small navigation helper for admin sections
+(function(){
+    const sections = ['bezci','roky','stanoviska','gallery','sponsors'];
+    function showSection(section){
+        sections.forEach(function(s){
+            const el = document.querySelector('.admin-section[data-section="'+s+'"]');
+            if(el) el.classList.toggle('active', s === section);
+            const btn = document.querySelector('.admin-nav-btn[data-section="'+s+'"]');
+            if(btn) btn.classList.toggle('active', s === section);
+        });
+        try{ history.replaceState(null, '', '#'+section); }catch(e){}
+        window.currentAdminSection = section;
+    }
+    window.showSection = showSection;
+    window.adminNext = function(){
+        let idx = sections.indexOf(window.currentAdminSection || sections[0]);
+        idx = (idx + 1) % sections.length; showSection(sections[idx]);
+    };
+    window.adminPrev = function(){
+        let idx = sections.indexOf(window.currentAdminSection || sections[0]);
+        idx = (idx - 1 + sections.length) % sections.length; showSection(sections[idx]);
+    };
+    document.addEventListener('DOMContentLoaded', function(){
+        const hash = (location.hash || '').replace('#','');
+        const start = sections.includes(hash) ? hash : 'bezci';
+        showSection(start);
+        document.querySelectorAll('.admin-prev').forEach(function(b){ b.addEventListener('click', window.adminPrev); });
+        document.querySelectorAll('.admin-next').forEach(function(b){ b.addEventListener('click', window.adminNext); });
+    });
+})();
+</script>
 
 <script>
 // Admin UI script (cleaned, formatted)
@@ -424,6 +481,7 @@ function openAddModal(section) {
         html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
         if (field.type === 'select') {
             html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+            // when opening the "add" modal there's no preselected value, just render options
             field.options.forEach(function(opt) { html += '<option value="' + opt + '">' + opt + '</option>'; });
             html += '</select>';
         } else if (field.type === 'textarea') {
@@ -540,7 +598,7 @@ function openDeleteModal(section) {
                         html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
                         if (field.type === 'select') {
                             html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
-                            field.options.forEach(function(opt) { html += '<option value="' + opt + '"' + (opt == value ? ' selected' : '') + '>' + opt + '</option>'; });
+                            field.options.forEach(function(opt) { html += '<option value="' + opt + '"' + (opt === value ? ' selected' : '') + '>' + opt + '</option>'; });
                             html += '</select>';
                         } else if (field.type === 'textarea') {
                             html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '>' + value + '</textarea>';
@@ -633,13 +691,16 @@ function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album 
 // --- Admin map picker: when add/edit modal contains x_pos/y_pos fields, show a small map picker image that
 // lets admin click to select relative coordinates (0..1). The picker will fill inputs and show a small marker.
 (function(){
+    // use PHP asset helper so static analysis can resolve the file
+    const ADMIN_MAP_IMG = '<?= isset($link) ? $link->asset("images/mapa_MartinNEW.png") : "/images/mapa_MartinNEW.png" ?>';
+
     // create picker HTML
     function createPickerHtml() {
         var html = '';
         html += '<div class="admin-map-picker mt-3">';
         html += '<div class="mb-2"><small class="text-muted">Vyberte pozíciu na mape (kliknutím) alebo zadajte čísla (0..1).</small></div>';
         html += '<div style="position:relative; display:inline-block; max-width:100%;">';
-        html += '<img id="adminMapImg" src="/images/mapa_MartinNEW.png" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
+        html += '<img id="adminMapImg" src="' + ADMIN_MAP_IMG + '" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
         html += '<div id="adminMapMarker" style="position:absolute;width:14px;height:14px;border-radius:7px;background:rgba(220,53,69,0.9);border:2px solid white;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>';
         html += '</div>';
         html += '<div class="mt-2"><button type="button" id="clearMapPos" class="btn btn-sm btn-outline-secondary">Vymazať pozíciu</button></div>';
@@ -675,18 +736,11 @@ function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album 
 
             function setMarkerRel(relX, relY) {
                 if (!img) return;
-                var rect = img.getBoundingClientRect();
-                // compute pixel position
-                var px = rect.left + relX * rect.width;
-                var py = rect.top + relY * rect.height;
-                // position marker relative to image container (which is positioned)
-                var containerRect = img.parentElement.getBoundingClientRect();
-                var left = relX * img.parentElement.offsetWidth;
-                var top = relY * img.parentElement.offsetHeight;
-                marker.style.left = (relX * 100) + '%';
-                marker.style.top = (relY * 100) + '%';
-                marker.style.display = 'block';
-            }
+                // position marker by percentages relative to image container
+                 marker.style.left = (relX * 100) + '%';
+                 marker.style.top = (relY * 100) + '%';
+                 marker.style.display = 'block';
+             }
 
             img.addEventListener('click', function(e){
                 var rect = img.getBoundingClientRect();

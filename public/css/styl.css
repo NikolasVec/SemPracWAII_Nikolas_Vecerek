@@ -84,6 +84,13 @@ body > .container-fluid.mt-3 {
     display: block;
 }
 
+/* Pull the homepage hero image up to hide the gap created by the fixed navbar */
+.home-hero-img {
+    display: block;
+    position: relative;
+    top: 0; /* no per-image offset: we'll lift the container instead for more reliable layout */
+}
+
 .behpopivo-nadpis {
     position: absolute;
     top: 45%; /* moved higher */
@@ -247,6 +254,9 @@ table.table td, table.table th {
         width: 46px;
         height: 46px;
     }
+
+    /* Lift the homepage hero image up to remove gap under fixed navbar */
+    .home-hero-img { top: 0; }
 }
 
 /* Footer improvements: clearer headings, link colors and sponsor image sizing */
@@ -339,4 +349,27 @@ table.table td, table.table th {
 /* Ensure anchor wrapping a card doesn't change background */
 a.text-decoration-none > .home-card {
     display: block;
+}
+
+/* If a page (like home) renders a full-bleed inner container with p-0 inside .web-content,
+   it will be pushed down by the outer .container-fluid.mt-3 in the layout. For those pages
+   pull the inner container up by the same amount (Bootstrap's mt-3 == 1rem) so the hero
+   image sits flush under the fixed navbar. This targets only the inner container pattern
+   used on the home page and avoids changing the global layout. */
+.web-content > .container-fluid.p-0 { margin-top: -1rem !important; }
+
+@media (max-width: 1000px) {
+    .web-content > .container-fluid.p-0 { margin-top: -0.75rem !important; }
+}
+
+/* Pull the entire home hero container up so hero image sits flush under the fixed navbar.
+   We compensate for body padding-top (70px) and the outer .mt-3 (1rem). Using calc so
+   it adapts if you later change the navbar height or spacing. */
+.home-top-lift {
+    margin-top: calc(-70px - 1rem); /* -70px (navbar) -1rem (outer mt-3) */
+}
+
+@media (max-width: 1000px) {
+    /* smaller navbar + spacing on narrow screens */
+    .home-top-lift { margin-top: calc(-56px - 0.75rem); }
 }

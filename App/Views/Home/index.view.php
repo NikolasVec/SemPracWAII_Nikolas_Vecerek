@@ -3,15 +3,13 @@
 /** @var \Framework\Support\LinkGenerator $link */
 ?>
 
-<div class="container-fluid p-0 m-0">
+<div class="container-fluid p-0 m-0 home-top-lift">
     <div class="row">
             <div class="text-center p-0 m-0 position-relative">
 
-                <img src="<?= $link->asset('images/BEHPOPIVO_OBR_BEZTEXTU.png') ?>" alt="Banner" class="w-100"
+                <img src="<?= $link->asset('images/BEHPOPIVO_OBR_BEZTEXTU.png') ?>" alt="Banner" class="w-100 home-hero-img"
                      style="display:block;margin:0;padding:0;border:0;">
             <div class="text-center p-0 m-0 home-image-container">
-                <br>
-                <br>
                 <div class="behpopivo-nadpis">BEH PO PIVO</div>
             </div>
         </div>
