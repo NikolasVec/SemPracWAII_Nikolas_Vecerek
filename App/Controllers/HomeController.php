@@ -44,6 +44,19 @@ class HomeController extends BaseController
     }
 
     /**
+     * Displays the informacie page.
+     *
+     * This action serves the HTML view for the informacie page, which is accessible to all users without any
+     * authorization.
+     *
+     * @return Response The response object containing the rendered HTML for the informacie page.
+     */
+    public function informacie(Request $request): Response
+    {
+        return $this->html();
+    }
+
+    /**
      * Displays the contact page.
      *
      * This action serves the HTML view for the contact page, which is accessible to all users without any
