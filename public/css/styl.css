@@ -1,7 +1,25 @@
 /* Ensure full-bleed layouts have no browser-default whitespace */
 html, body {
+    height: 100%;
     margin: 0;
     padding: 0;
+}
+
+/* Make the page a column flex layout so footer can stick to the bottom when content is short */
+body {
+    display: flex;
+    flex-direction: column;
+    min-height: 100vh; /* ensure full viewport height */
+    padding-top: 70px; /* space for fixed-top navbar (matches .navbar min-height) */
+}
+
+/* The main content container should grow to fill available space between navbar and footer */
+body > .container-fluid.mt-3 {
+    flex: 1 0 auto;
+}
+
+.web-content {
+    flex: 1 0 auto;
 }
 
 /* Make footer truly full-bleed regardless of parent containers */
@@ -68,7 +86,7 @@ html, body {
 
 .behpopivo-nadpis {
     position: absolute;
-    top: 35%; /* moved higher */
+    top: 45%; /* moved higher */
     left: 50%;
     transform: translate(-50%, -50%);
     color: #fff;
@@ -306,8 +324,7 @@ table.table td, table.table th {
 
 /* Cards on home page: use event accent color */
 .home-card {
-    background: #ffcf0f !important; /* force requested color to override Bootstrap utilities */
-    background-color: #ffcf0f !important;
+    background-color: #ffcf0f !important; /* force requested color to override Bootstrap utilities */
     color: #111 !important; /* dark text for contrast */
     border: 1px solid rgba(0,0,0,0.06);
     border-radius: 6px;
@@ -323,5 +340,3 @@ table.table td, table.table th {
 a.text-decoration-none > .home-card {
     display: block;
 }
-
-
