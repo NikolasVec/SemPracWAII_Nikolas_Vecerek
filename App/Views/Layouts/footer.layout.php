@@ -1,13 +1,12 @@
 <?php
 /** @var \Framework\Support\LinkGenerator $link */
-use Framework\Support\FooterDataProvider;
+/** @var \App\Support\FooterPresenter $footerPresenter */
 
-$provider = new FooterDataProvider();
-$contactEmail = $provider->getContactEmail();
-$contactPhone = $provider->getContactPhone();
-$facebookUrl = $provider->getFacebookUrl();
-$instagramUrl = $provider->getInstagramUrl();
-$sponsors = $provider->getSponsors();
+$contactEmail = $footerPresenter->getContactEmail();
+$contactPhone = $footerPresenter->getContactPhone();
+$facebookUrl = $footerPresenter->getFacebookUrl();
+$instagramUrl = $footerPresenter->getInstagramUrl();
+$sponsors = $footerPresenter->getSponsors();
 ?>
 
 <footer class="site-footer" style="background:#111;color:#eee;padding:2rem 1rem 2rem 4rem;margin-top:2rem;border-top:4px solid #222;">
@@ -34,15 +33,12 @@ $sponsors = $provider->getSponsors();
                 <div class="d-flex align-items-center" style="gap:1rem;flex-wrap:wrap;">
                     <?php if (!empty($sponsors)): ?>
                         <?php foreach ($sponsors as $sp): ?>
-                            <?php $logo = $sp['logo'] ?? null; $url = $sp['url'] ?? null; $name = $sp['name'] ?? ''; ?>
+                            <?php $name = $sp['name'] ?? ''; $url = $sp['url'] ?? null; $hasLogo = $sp['hasLogo'] ?? false; ?>
                             <div style="display:inline-flex;align-items:center;gap:0.5rem;padding:0.25rem 0.5rem;background:transparent;border-radius:4px;">
-                                <?php if ($logo): ?>
-                                    <?php $src = isset($link) ? $link->asset('images/sponsors/' . $logo) : '/images/sponsors/' . $logo; ?>
-                                    <?php $ext = strtolower(pathinfo((string)$logo, PATHINFO_EXTENSION)); ?>
-                                    <?php $imgStyle = 'height:48px;object-fit:contain;display:block;border:1px solid rgba(255,255,255,0.06);'; ?>
-                                    <?php if ($ext !== 'png') { $imgStyle .= 'background:#fff;padding:4px;'; } ?>
+                                <?php if ($hasLogo): ?>
+                                    <?php $src = $sp['logoSrc'] ?? ''; $imgStyle = $sp['imgStyle'] ?? ''; ?>
                                     <?php if ($url): ?><a href="<?= htmlspecialchars($url) ?>" target="_blank" rel="noopener noreferrer"><?php endif; ?>
-                                        <img src="<?= htmlspecialchars($src) ?>" alt="<?= htmlspecialchars($name) ?>" style="<?= $imgStyle ?>"/>
+                                        <img src="<?= htmlspecialchars($src) ?>" alt="<?= htmlspecialchars($name) ?>" style="<?= htmlspecialchars($imgStyle) ?>"/>
                                     <?php if ($url): ?></a><?php endif; ?>
                                 <?php else: ?>
                                     <div style="padding:0.5rem 0.75rem;background:#222;border-radius:4px;color:#ddd;"><?= htmlspecialchars($name) ?></div>

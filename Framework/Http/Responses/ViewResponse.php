@@ -5,6 +5,8 @@ namespace Framework\Http\Responses;
 use App\Configuration;
 use Framework\Core\App;
 use Framework\Support\View as ViewHelper;
+use App\Support\LayoutPresenter;
+use App\Support\FooterPresenter;
 
 /**
  * Class ViewResponse
@@ -68,6 +70,10 @@ class ViewResponse extends Response
         $viewHelpers = [
             'user' => $this->app->getAppUser(),
             'link' => $this->app->getLinkGenerator(),
+            // layoutPresenter is provided to layouts/views so they don't instantiate presentation logic
+            'layoutPresenter' => new LayoutPresenter($this->app->getAppUser(), $this->app->getLinkGenerator()),
+            // footerPresenter provides presentation-ready footer data (keeps footer view simple)
+            'footerPresenter' => new FooterPresenter($this->app->getLinkGenerator()),
         ];
 
         // Selected layout is controlled by the helper via reference; default to root layout

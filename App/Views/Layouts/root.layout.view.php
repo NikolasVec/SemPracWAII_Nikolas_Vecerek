@@ -3,24 +3,27 @@
 /** @var string $contentHTML */
 /** @var \Framework\Auth\AppUser $user */
 /** @var \Framework\Support\LinkGenerator $link */
+
+// layoutPresenter is injected by the framework (ViewResponse) and is available here
+// as $layoutPresenter. Avoid instantiating presenters in the view.
 ?>
 <!DOCTYPE html>
 <html lang="sk">
 <head>
     <title><?= App\Configuration::APP_NAME ?></title>
     <!-- Favicons -->
-    <link rel="apple-touch-icon" sizes="180x180" href="<?= $link->asset('favicons/apple-touch-icon.png') ?>">
-    <link rel="icon" type="image/png" sizes="32x32" href="<?= $link->asset('favicons/favicon-32x32.png') ?>">
-    <link rel="icon" type="image/png" sizes="16x16" href="<?= $link->asset('favicons/favicon-16x16.png') ?>">
-    <link rel="manifest" href="<?= $link->asset('favicons/site.webmanifest') ?>">
-    <link rel="shortcut icon" href="<?= $link->asset('favicons/favicon.ico') ?>">
+    <link rel="apple-touch-icon" sizes="180x180" href="<?= $layoutPresenter->asset('favicons/apple-touch-icon.png') ?>">
+    <link rel="icon" type="image/png" sizes="32x32" href="<?= $layoutPresenter->asset('favicons/favicon-32x32.png') ?>">
+    <link rel="icon" type="image/png" sizes="16x16" href="<?= $layoutPresenter->asset('favicons/favicon-16x16.png') ?>">
+    <link rel="manifest" href="<?= $layoutPresenter->asset('favicons/site.webmanifest') ?>">
+    <link rel="shortcut icon" href="<?= $layoutPresenter->asset('favicons/favicon.ico') ?>">
     <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/css/bootstrap.min.css" rel="stylesheet"
           integrity="sha384-T3c6CoIi6uLrA9TneNEoa7RxnatzjcDSCmG1MXxSR1GAsXEV/Dwwykc2MPK8M2HN" crossorigin="anonymous">
     <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.2/dist/js/bootstrap.bundle.min.js"
             integrity="sha384-C6RzsynM9kWDrMNeT87bh95OGNyZPhcTNXj1NW7RuBCsyN/o0jlpcV8Qyq46cDfL"
             crossorigin="anonymous"></script>
-    <link rel="stylesheet" href="<?= $link->asset('css/styl.css') ?>">
-    <script src="<?= $link->asset('js/script.js') ?>"></script>
+    <link rel="stylesheet" href="<?= $layoutPresenter->asset('css/styl.css') ?>">
+    <script src="<?= $layoutPresenter->asset('js/script.js') ?>"></script>
     <link href="https://cdn.jsdelivr.net/npm/bootstrap-icons/font/bootstrap-icons.css" rel="stylesheet">
 </head>
 <body>
@@ -35,39 +38,39 @@
     <div class="container-fluid d-flex justify-content-center align-items-center">
         <!-- Ľavé tlačidlá (skryteľné na úzkom displeji) -->
         <div class="d-flex align-items-center nav-left-group" style="gap: 2rem; margin-left: 7vw;">
-            <a class="nav-link px-3" href="<?= $link->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
-            <a class="nav-link px-3" href="<?= $link->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
+            <a class="nav-link px-3" href="<?= $layoutPresenter->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
+            <a class="nav-link px-3" href="<?= $layoutPresenter->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
         </div>
 
         <!-- Logo v strede (vždy viditeľné) -->
-        <a class="navbar-brand mx-4 logo-with-circle" href="<?= $link->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
+        <a class="navbar-brand mx-4 logo-with-circle" href="<?= $layoutPresenter->url('home.index') ?>" style="position: relative; display: flex; align-items: center; justify-content: center;" title="Hlavná stránka">
             <span class="logo-circle"></span>
-            <img src="<?= $link->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
+            <img src="<?= $layoutPresenter->asset('images/BehPoPivo_logo.png') ?>" title="Hlavná stránka" alt="Framework Logo">
         </a>
 
         <!-- Pravé tlačidlá (skryteľné na úzkom displeji) -->
         <div class="d-flex align-items-center nav-right-group" style="gap: 2rem; margin-right: 7vw;">
-            <a class="nav-link px-3" href="<?= $link->url('home.mapa') ?>"><strong>MAPA</strong></a>
-            <a class="nav-link px-3" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
+            <a class="nav-link px-3" href="<?= $layoutPresenter->url('home.mapa') ?>"><strong>MAPA</strong></a>
+            <a class="nav-link px-3" href="<?= $layoutPresenter->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
         </div>
     </div>
 
     <!-- Úplne pravý kraj: Log in/Log out (skryteľné na úzkom displeji) -->
     <div class="d-flex align-items-center ms-1 nav-auth-group" style="min-width: 90px;">
-        <?php if ($user->isLoggedIn()) { ?>
-            <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
+        <?php if ($layoutPresenter->isLoggedIn()) { ?>
+            <?php if ($layoutPresenter->isAdmin()) { ?>
                 <!-- Admins: show admin icon in navbar (Log out is available in the hamburger/offcanvas menu) -->
-                <a class="nav-link navbar-text me-2" href="<?= $link->url('admin.index') ?>" title="Admin">
+                <a class="nav-link navbar-text me-2" href="<?= $layoutPresenter->adminUrl() ?>" title="Admin">
                     <i class="bi bi-person fs-3"></i>
                 </a>
             <?php } else { ?>
                 <!-- Non-admins: do not show Log out in navbar; icon links to profile page -->
-                <a class="nav-link navbar-text me-2" href="<?= $link->url('home.profile') ?>" title="Môj profil">
+                <a class="nav-link navbar-text me-2" href="<?= $layoutPresenter->profileUrl() ?>" title="Môj profil">
                     <i class="bi bi-person fs-3"></i>
                 </a>
             <?php } ?>
         <?php } else { ?>
-            <a class="nav-link" href="<?= App\Configuration::LOGIN_URL ?>"><strong>Log in</strong></a>
+            <a class="nav-link" href="<?= $layoutPresenter->loginUrl() ?>"><strong>Log in</strong></a>
         <?php } ?>
     </div>
 </nav>
@@ -79,21 +82,21 @@
     </div>
     <div class="offcanvas-body">
         <div class="list-group">
-            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
-            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
-            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.mapa') ?>"><strong>MAPA</strong></a>
-            <a class="list-group-item list-group-item-action" href="<?= $link->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
-            <?php if ($user->isLoggedIn()) { ?>
-                <?php if ($user->getIdentity() !== null && method_exists($user->getIdentity(), 'isAdmin') && $user->isAdmin()) { ?>
+            <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('home.registrationPage') ?>"><strong>REGISTRÁCIA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('home.galleryPage') ?>"><strong>GALERIA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('home.mapa') ?>"><strong>MAPA</strong></a>
+            <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
+            <?php if ($layoutPresenter->isLoggedIn()) { ?>
+                <?php if ($layoutPresenter->isAdmin()) { ?>
                     <!-- Admin: link to admin dashboard + logout -->
-                    <a class="list-group-item list-group-item-action" href="<?= $link->url('admin.index') ?>"><strong>Administrácia</strong></a>
-                    <a class="list-group-item list-group-item-action" href="<?= $link->url('auth.logout') ?>"><strong>Log out</strong></a>
+                    <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->adminUrl() ?>"><strong>Administrácia</strong></a>
+                    <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->loginUrl() ?>"><strong>Log out</strong></a>
                 <?php } else { ?>
                     <!-- Non-admins: provide link to profile in offcanvas; logout available on profile page -->
-                    <a class="list-group-item list-group-item-action" href="<?= $link->url('home.profile') ?>"><strong>Môj profil</strong></a>
+                    <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->profileUrl() ?>"><strong>Môj profil</strong></a>
                 <?php } ?>
             <?php } else { ?>
-                <a class="list-group-item list-group-item-action" href="<?= App\Configuration::LOGIN_URL ?>"><strong>Log in</strong></a>
+                <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->loginUrl() ?>"><strong>Log in</strong></a>
             <?php } ?>
         </div>
     </div>
@@ -106,6 +109,6 @@
 </div>
 
 <?php // include footer ?>
-<?php try { include __DIR__ . '/footer.view.php'; } catch (\Throwable $e) { /* ignore if missing */ } ?>
+<?php try { include __DIR__ . '/footer.layout.php'; } catch (\Throwable $e) { /* ignore if missing */ } ?>
 </body>
 </html>
