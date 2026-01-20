@@ -30,7 +30,10 @@
                         foreach($cols as $col): ?>
                             <th><?= htmlspecialchars((string)$col) ?></th>
                         <?php endforeach;
-                    }
+                        // actions header
+                        ?>
+                        <th>Akcie</th>
+                    <?php }
                     ?>
                 </tr>
                 </thead>
@@ -40,6 +43,10 @@
                         <?php foreach ($cols as $col): ?>
                             <td><?= htmlspecialchars((string)($bezc[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1" onclick="window.currentEditSection='bezci'; document.getElementById('editId').value=<?= htmlspecialchars((string)($bezc['ID_bezca'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('editIdModal')).show();">Upraviť</button>
+                            <button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection='bezci'; document.getElementById('deleteId').value=<?= htmlspecialchars((string)($bezc['ID_bezca'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('deleteModal')).show();">Vymazať</button>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -47,8 +54,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('bezci')">Pridať</button>
-                <button class="btn btn-warning" data-section="bezci">Upraviť</button>
-                <button class="btn btn-danger" data-section="bezci">Vymazať</button>
+                <!-- global edit/delete removed in favor of per-row actions -->
             </div>
             </div> <!-- end section bezci -->
 
@@ -80,14 +86,24 @@
                         <?php foreach ($colsRoky as $col): ?>
                             <td><?= htmlspecialchars((string)($rok[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
-                        <!-- actions: set/clear results year -->
+                        <!-- actions: set/clear results year + edit/delete -->
                         <td>
-                            <?php if (!empty($currentResultsYear) && (string)$currentResultsYear === (string)($rok['ID_roka'] ?? '')): ?>
-                                <span class="badge bg-success">Aktuálne</span>
-                                <button type="button" class="btn btn-sm btn-secondary ms-2" onclick="clearResultsYear()">Zrušiť</button>
-                            <?php else: ?>
-                                <button type="button" class="btn btn-sm btn-primary" onclick="setResultsYear(<?= htmlspecialchars((string)($rok['ID_roka'] ?? '')) ?>)">Nastaviť ako výsledkový rok</button>
-                            <?php endif; ?>
+                            <div class="d-flex flex-column">
+                                <div class="mb-2 d-flex align-items-center">
+                                    <?php if (!empty($currentResultsYear) && (string)$currentResultsYear === (string)($rok['ID_roka'] ?? '')): ?>
+                                        <span class="badge bg-success me-2">Aktuálne</span>
+                                        <button type="button" class="btn btn-sm btn-outline-secondary" onclick="clearResultsYear()">Zrušiť</button>
+                                    <?php else: ?>
+                                        <button type="button" class="btn btn-sm btn-primary" onclick="setResultsYear(<?= htmlspecialchars((string)($rok['ID_roka'] ?? '')) ?>)">Nastaviť ako výsledkový rok</button>
+                                    <?php endif; ?>
+                                </div>
+                                <div>
+                                    <div class="btn-group" role="group" aria-label="Row actions">
+                                        <button class="btn btn-sm btn-warning" onclick="window.currentEditSection='roky'; document.getElementById('editId').value=<?= htmlspecialchars((string)($rok['ID_roka'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('editIdModal')).show();">Upraviť</button>
+                                        <button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection='roky'; document.getElementById('deleteId').value=<?= htmlspecialchars((string)($rok['ID_roka'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('deleteModal')).show();">Vymazať</button>
+                                    </div>
+                                </div>
+                            </div>
                         </td>
                     </tr>
                 <?php endforeach; ?>
@@ -96,8 +112,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('roky')">Pridať</button>
-                <button class="btn btn-warning" data-section="roky">Upraviť</button>
-                <button class="btn btn-danger" data-section="roky">Vymazať</button>
+                <!-- global edit/delete removed in favor of per-row actions -->
             </div>
             </div> <!-- end section roky -->
 
@@ -113,7 +128,10 @@
                         foreach($colsStan as $col): ?>
                             <th><?= htmlspecialchars((string)$col) ?></th>
                         <?php endforeach;
-                    }
+                        // actions header
+                        ?>
+                        <th>Akcie</th>
+                    <?php }
                     ?>
                 </tr>
                 </thead>
@@ -123,6 +141,10 @@
                         <?php foreach ($colsStan as $col): ?>
                             <td><?= htmlspecialchars((string)($stan[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
+                        <td>
+                            <button class="btn btn-sm btn-warning me-1" onclick="window.currentEditSection='stanoviska'; document.getElementById('editId').value=<?= htmlspecialchars((string)($stan['ID_stanoviska'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('editIdModal')).show();">Upraviť</button>
+                            <button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection='stanoviska'; document.getElementById('deleteId').value=<?= htmlspecialchars((string)($stan['ID_stanoviska'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('deleteModal')).show();">Vymazať</button>
+                        </td>
                     </tr>
                 <?php endforeach; ?>
                 </tbody>
@@ -130,8 +152,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('stanoviska')">Pridať</button>
-                <button class="btn btn-warning" data-section="stanoviska">Upraviť</button>
-                <button class="btn btn-danger" data-section="stanoviska">Vymazať</button>
+                <!-- global edit/delete removed in favor of per-row actions -->
             </div>
             </div> <!-- end section stanoviska -->
 
@@ -192,6 +213,7 @@
                     <th>Logo</th>
                     <th>URL</th>
                     <th>Vytvorené</th>
+                    <th>Akcie</th>
                 </tr>
             </thead>
             <tbody>
@@ -211,18 +233,21 @@
                             </td>
                             <td><?= htmlspecialchars((string)($sp['url'] ?? '')) ?></td>
                             <td><?= htmlspecialchars((string)($sp['created_at'] ?? '')) ?></td>
+                            <td>
+                                <button class="btn btn-sm btn-warning me-1" onclick="window.currentEditSection='sponsors'; document.getElementById('editId').value=<?= htmlspecialchars((string)($sp['ID_sponsor'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('editIdModal')).show();">Upraviť</button>
+                                <button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection='sponsors'; document.getElementById('deleteId').value=<?= htmlspecialchars((string)($sp['ID_sponsor'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('deleteModal')).show();">Vymazať</button>
+                            </td>
                         </tr>
                     <?php endforeach; ?>
                 <?php else: ?>
-                    <tr><td colspan="7">Žiadni sponzori</td></tr>
+                    <tr><td colspan="8">Žiadni sponzori</td></tr>
                 <?php endif; ?>
             </tbody>
         </table>
     </div>
     <div class="mb-4">
         <button class="btn btn-primary" onclick="openAddModal('sponsors')">Pridať</button>
-        <button class="btn btn-warning" data-section="sponsors">Upraviť</button>
-        <button class="btn btn-danger" data-section="sponsors">Vymazať</button>
+        <!-- global edit/delete removed in favor of per-row actions -->
     </div>
 </div>
 </div> <!-- end section sponsors -->
@@ -275,8 +300,7 @@
     </div>
     <div class="mb-4">
         <button class="btn btn-primary" onclick="openAddModal('pouzivatelia')">Pridať</button>
-        <button class="btn btn-warning" data-section="pouzivatelia">Upraviť</button>
-        <button class="btn btn-danger" data-section="pouzivatelia">Vymazať</button>
+        <!-- global edit/delete removed in favor of per-row actions -->
     </div>
 </div>
 </div> <!-- end section pouzivatelia -->
@@ -727,4 +751,6 @@
                     if (data && data.success) location.reload();
                     else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
                 }).catch(function() { alert('Chyba pri ukladaní zmien.'); });
-
+        });
+    })();
+</script>
