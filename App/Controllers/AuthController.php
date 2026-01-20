@@ -45,6 +45,32 @@ class AuthController extends BaseController
      */
     public function login(Request $request): Response
     {
+        $session = $this->app->getSession();
+
+        // Configuration for login attempts/lockout
+        $maxAttempts = 5; // assumption: allow 5 attempts
+        $lockoutSeconds = 3600; // 1 hour lockout
+
+        // Read current counters from session
+        $attempts = (int)$session->get('login_attempts', 0);
+        $lockedUntil = (int)$session->get('login_locked_until', 0);
+
+        // If currently locked, and lock not expired -> show message immediately
+        if ($lockedUntil > time()) {
+            $remaining = $lockedUntil - time();
+            $minutes = (int)ceil($remaining / 60);
+            $message = 'Prekročili ste počet povolených pokusov. Skúste znova o ' . date('H:i', $lockedUntil) . ' (približne o ' . $minutes . ' minút).';
+            return $this->html(['message' => $message, 'attemptsLeft' => 0, 'lockoutExpiresAt' => $lockedUntil]);
+        }
+
+        // If lock expired previously, clear counters
+        if ($lockedUntil > 0 && $lockedUntil <= time()) {
+            $session->remove('login_attempts');
+            $session->remove('login_locked_until');
+            $attempts = 0;
+            $lockedUntil = 0;
+        }
+
         $logged = null;
         if ($request->hasValue('submit')) {
             // Read email from form (input name changed to 'email')
@@ -53,29 +79,61 @@ class AuthController extends BaseController
 
             // Server-side validation: require email and password
             if ($email === '' || $password === null || $password === '') {
+                $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
+                $displayAttempts = ($attemptsLeftRaw === 1) ? 1 : null;
                 $message = 'E-mail a heslo sú povinné.';
-                return $this->html(compact('message'));
+                return $this->html(['message' => $message, 'attemptsLeft' => $displayAttempts, 'lockoutExpiresAt' => null]);
             }
 
             // Validate email format
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
+                $displayAttempts = ($attemptsLeftRaw === 1) ? 1 : null;
                 $message = 'Zadaný e-mail nemá správny formát.';
-                return $this->html(compact('message'));
+                return $this->html(['message' => $message, 'attemptsLeft' => $displayAttempts, 'lockoutExpiresAt' => null]);
             }
 
             $logged = $this->app->getAuthenticator()->login($email, $password);
             if ($logged) {
+                // Reset attempt counters on successful login
+                $session->remove('login_attempts');
+                $session->remove('login_locked_until');
+
                 // Redirect admins to admin dashboard, non-admins to homepage
                 $appUser = $this->app->getAuthenticator()->getUser();
                 if ($appUser->isAdmin()) {
                     return $this->redirect($this->url("admin.index"));
                 }
                 return $this->redirect($this->url("home.index"));
+            } else {
+                // Failed login: increment attempts and possibly set lockout
+                $attempts++;
+                $session->set('login_attempts', $attempts);
+
+                if ($attempts >= $maxAttempts) {
+                    $lockedUntil = time() + $lockoutSeconds;
+                    $session->set('login_locked_until', $lockedUntil);
+                    $minutes = (int)ceil($lockoutSeconds / 60);
+                    $message = 'Prekročili ste počet povolených pokusov. Na prihlásenie musíte počkať ' . $minutes . ' minút (do ' . date('H:i', $lockedUntil) . ').';
+                    return $this->html(['message' => $message, 'attemptsLeft' => 0, 'lockoutExpiresAt' => $lockedUntil]);
+                }
+
+                $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
+                if ($attemptsLeftRaw === 1) {
+                    $message = 'Nesprávny e-mail alebo heslo. Zostáva posledný pokus.';
+                    $displayAttempts = 1;
+                } else {
+                    $message = 'Nesprávny e-mail alebo heslo.';
+                    $displayAttempts = null;
+                }
+                return $this->html(['message' => $message, 'attemptsLeft' => $displayAttempts, 'lockoutExpiresAt' => null]);
             }
         }
 
-        $message = $logged === false ? 'Nesprávny e-mail alebo heslo' : null;
-        return $this->html(compact("message"));
+        // Default rendering (GET or no submit)
+        $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
+        $displayAttempts = ($attemptsLeftRaw === 1) ? 1 : null;
+        return $this->html(['message' => ($logged === false ? 'Nesprávny e-mail alebo heslo' : null), 'attemptsLeft' => $displayAttempts, 'lockoutExpiresAt' => null]);
     }
 
     /**
@@ -153,7 +211,7 @@ class AuthController extends BaseController
             return $this->html(['message' => 'Heslo musí obsahovať minimálne 5 písmen a aspoň jedno číslo.' . $diag], 'Auth/newUserRegistration');
         }
 
-        // Validate email format
+        // Validate email form
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->html(['message' => 'Zadaný email nemá správny formát.'], 'Auth/newUserRegistration');
         }
@@ -207,3 +265,4 @@ class AuthController extends BaseController
         return $this->view('Auth/successRegistration');
     }
 }
+

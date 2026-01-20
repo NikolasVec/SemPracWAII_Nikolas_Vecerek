@@ -89,6 +89,19 @@ class AdminController extends BaseController
             $sponsors = [];
         }
 
+        // --- Fetch users (Pouzivatelia) for admin listing (if table exists) ---
+        $pouzivatelia = [];
+        try {
+            $stmt = $conn->query("SHOW TABLES LIKE 'Pouzivatelia'");
+            $usersTableExists = $stmt->fetchColumn() !== false;
+            if ($usersTableExists) {
+                // select commonly useful fields (do not include password hash)
+                $pouzivatelia = $conn->query('SELECT ID_pouzivatela, meno, priezvisko, email, admin, zabehnute_kilometre, vypite_piva FROM Pouzivatelia ORDER BY ID_pouzivatela ASC')->fetchAll();
+            }
+        } catch (\Throwable $e) {
+            $pouzivatelia = [];
+        }
+
         // compute upload/post size limits (convert shorthand like '2M' to bytes)
         $parseIniBytes = function($val) {
             $val = trim($val);
@@ -113,6 +126,7 @@ class AdminController extends BaseController
             'currentResultsYear' => $currentResultsYear,
             'albums' => $albums,
             'sponsors' => $sponsors,
+            'pouzivatelia' => $pouzivatelia,
             'upload_max_bytes' => $uploadMaxBytes,
             'post_max_bytes' => $postMaxBytes
         ]);
@@ -318,6 +332,33 @@ class AdminController extends BaseController
                 $stmt->execute([$name, $contact_email ?: null, $contact_phone ?: null, $logoFilename ?: null, $url ?: null]);
 
                 return $this->json(['success' => true]);
+            } elseif ($section === 'pouzivatelia') {
+                // create a new user in Pouzivatelia table (hash password)
+                $meno = trim($_POST['meno'] ?? '');
+                $priezvisko = trim($_POST['priezvisko'] ?? '');
+                $email = trim($_POST['email'] ?? '');
+                $heslo = $_POST['heslo'] ?? '';
+                $adminFlag = isset($_POST['admin']) ? ($_POST['admin'] ? 1 : 0) : 0;
+
+                if ($meno === '' || $priezvisko === '' || $email === '') {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return $this->json(['success' => false, 'message' => 'Neplatný email.']);
+                }
+                // password is optional but recommended; if provided, hash it
+                $hash = null;
+                if ($heslo !== '') {
+                    $hash = password_hash($heslo, PASSWORD_DEFAULT);
+                }
+
+                // ensure table exists (lightweight)
+                $conn->exec("CREATE TABLE IF NOT EXISTS Pouzivatelia (ID_pouzivatela INT AUTO_INCREMENT PRIMARY KEY, meno VARCHAR(255), priezvisko VARCHAR(255), email VARCHAR(255) UNIQUE, heslo VARCHAR(255), admin TINYINT(1) DEFAULT 0, zabehnute_kilometre DOUBLE DEFAULT 0, vypite_piva INT DEFAULT 0)");
+
+                $stmt = $conn->prepare('INSERT INTO Pouzivatelia (meno, priezvisko, email, heslo, admin, zabehnute_kilometre, vypite_piva) VALUES (?, ?, ?, ?, ?, 0, 0)');
+                $stmt->execute([$meno, $priezvisko, $email, $hash, (int)$adminFlag]);
+
+                return $this->json(['success' => true]);
             } else {
                 return $this->json(['success' => false, 'message' => 'Neznáma sekcia.']);
             }
@@ -399,6 +440,22 @@ class AdminController extends BaseController
                 // delete album row
                 $stmt = $conn->prepare('DELETE FROM albums WHERE ID_album = ?');
                 $stmt->execute([(int)$albumId]);
+            } elseif ($section === 'pouzivatelia') {
+                // prevent admin from deleting their own account
+                try {
+                    if ($this->user->isLoggedIn() && method_exists($this->user, 'getId')) {
+                        $currentId = (int)$this->user->getId();
+                        if ($currentId === (int)$id) {
+                            return $this->json(['success' => false, 'message' => 'Nemôžete vymazať práve prihlásený účet.']);
+                        }
+                    }
+                } catch (\Throwable $e) {
+                    // ignore identity issues and proceed with deletion check
+                }
+
+                // allow admin to delete users from Pouzivatelia table by ID_pouzivatela
+                $stmt = $conn->prepare('DELETE FROM Pouzivatelia WHERE ID_pouzivatela = ?');
+                $stmt->execute([(int)$id]);
             } else {
                 // sponsors deletion
                 if ($section === 'sponsors') {
@@ -449,6 +506,9 @@ class AdminController extends BaseController
                 $stmt = $conn->prepare('SELECT * FROM rokKonania WHERE ID_roka = ?');
             } elseif ($section === 'stanoviska') {
                 $stmt = $conn->prepare('SELECT * FROM Stanovisko WHERE ID_stanoviska = ?');
+            } elseif ($section === 'pouzivatelia') {
+                // fetch user record without password
+                $stmt = $conn->prepare('SELECT ID_pouzivatela, meno, priezvisko, email, admin, zabehnute_kilometre, vypite_piva FROM Pouzivatelia WHERE ID_pouzivatela = ?');
             } else {
                 if ($section === 'sponsors') {
                     $stmt = $conn->prepare('SELECT * FROM sponsors WHERE ID_sponsor = ?');
@@ -489,27 +549,60 @@ class AdminController extends BaseController
         $conn = Connection::getInstance();
 
         try {
-            if ($section === 'bezci') {
+            if ($section === 'pouzivatelia') {
                 $meno = trim($_POST['meno'] ?? '');
                 $priezvisko = trim($_POST['priezvisko'] ?? '');
                 $email = trim($_POST['email'] ?? '');
-                $pohlavie = trim($_POST['pohlavie'] ?? '');
-                $ID_roka = $_POST['ID_roka'] ?? null;
-                $cas = trim($_POST['cas_dobehnutia'] ?? '');
+                $heslo = $_POST['heslo'] ?? '';
+                $adminFlag = isset($_POST['admin']) ? ($_POST['admin'] ? 1 : 0) : 0;
 
-                if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '' || !$this->isValidId($ID_roka)) {
+                if ($meno === '' || $priezvisko === '' || $email === '') {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     return $this->json(['success' => false, 'message' => 'Neplatný email.']);
                 }
+
+                // If password provided, hash it; otherwise keep existing
+                if ($heslo !== '') {
+                    $hash = password_hash($heslo, PASSWORD_DEFAULT);
+                    $stmt = $conn->prepare('UPDATE Pouzivatelia SET meno=?, priezvisko=?, email=?, heslo=?, admin=? WHERE ID_pouzivatela=?');
+                    $stmt->execute([$meno, $priezvisko, $email, $hash, (int)$adminFlag, (int)$id]);
+                } else {
+                    $stmt = $conn->prepare('UPDATE Pouzivatelia SET meno=?, priezvisko=?, email=?, admin=? WHERE ID_pouzivatela=?');
+                    $stmt->execute([$meno, $priezvisko, $email, (int)$adminFlag, (int)$id]);
+                }
+
+                return $this->json(['success' => true]);
+            }
+             if ($section === 'bezci') {
+                 $meno = trim($_POST['meno'] ?? '');
+                 $priezvisko = trim($_POST['priezvisko'] ?? '');
+                 $email = trim($_POST['email'] ?? '');
+                 $pohlavie = trim($_POST['pohlavie'] ?? '');
+                 $ID_roka = $_POST['ID_roka'] ?? null;
+                 $cas = trim($_POST['cas_dobehnutia'] ?? '');
+
+                if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '' || !$this->isValidId($ID_roka)) {
+                    return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
+                }
+                if (strlen($meno) > 255 || strlen($priezvisko) > 255) {
+                    return $this->json(['success' => false, 'message' => 'Meno alebo priezvisko sú príliš dlhé.']);
+                }
+                if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                    return $this->json(['success' => false, 'message' => 'Neplatný email.']);
+                }
+                // accept only M or Z (case-insensitive) - adjust if your app supports other values
                 if (!preg_match('/^[MZmz]$/', $pohlavie)) {
                     return $this->json(['success' => false, 'message' => 'Neplatné pohlavie.']);
                 }
+
+                // ensure year exists
                 if (!$this->yearExists($conn, $ID_roka)) {
                     return $this->json(['success' => false, 'message' => 'Vybraný rok neexistuje.']);
                 }
 
+                // Normalize time: accept H:MM or H:MM:SS and convert to HH:MM:SS; empty -> null
                 if ($cas === '') {
                     $casTime = null;
                 } else {

@@ -14,6 +14,7 @@
                 <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="stanoviska" onclick="showSection('stanoviska')">Stanovištia</button>
                 <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="gallery" onclick="showSection('gallery')">Galéria</button>
                 <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="sponsors" onclick="showSection('sponsors')">Sponzori</button>
+                <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="pouzivatelia" onclick="showSection('pouzivatelia')">Používatelia</button>
               </div>
             </nav>
 
@@ -226,6 +227,60 @@
 </div>
 </div> <!-- end section sponsors -->
 
+<!-- Users management -->
+<div class="admin-section" data-section="pouzivatelia">
+<div class="container-fluid mt-4">
+    <h3>Používatelia</h3>
+    <div class="table-scroll-wrapper">
+        <table class="table table-bordered table-striped">
+            <thead>
+                <tr>
+                    <?php
+                    if (!empty($pouzivatelia)) {
+                        $colsUsers = array_filter(array_keys($pouzivatelia[0]), 'is_string');
+                        foreach($colsUsers as $col): ?>
+                            <th><?= htmlspecialchars((string)$col) ?></th>
+                        <?php endforeach;
+                        // actions header
+                        ?>
+                        <th>Akcie</th>
+                    <?php } else { ?>
+                        <th>ID</th>
+                        <th>Meno</th>
+                        <th>Priezvisko</th>
+                        <th>Email</th>
+                        <th>Admin</th>
+                        <th>Akcie</th>
+                    <?php } ?>
+                </tr>
+            </thead>
+            <tbody>
+                <?php if (!empty($pouzivatelia)): ?>
+                    <?php foreach ($pouzivatelia as $usr): ?>
+                        <tr>
+                            <?php foreach ($colsUsers as $col): ?>
+                                <td><?= htmlspecialchars((string)($usr[$col] ?? '')) ?></td>
+                            <?php endforeach; ?>
+                            <td>
+                                <button class="btn btn-sm btn-warning me-1" onclick="window.currentEditSection='pouzivatelia'; document.getElementById('editId').value=<?= htmlspecialchars((string)($usr['ID_pouzivatela'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('editIdModal')).show();">Upraviť</button>
+                                <button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection='pouzivatelia'; document.getElementById('deleteId').value=<?= htmlspecialchars((string)($usr['ID_pouzivatela'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('deleteModal')).show();">Vymazať</button>
+                            </td>
+                        </tr>
+                    <?php endforeach; ?>
+                <?php else: ?>
+                    <tr><td colspan="6">Žiadni používatelia</td></tr>
+                <?php endif; ?>
+            </tbody>
+        </table>
+    </div>
+    <div class="mb-4">
+        <button class="btn btn-primary" onclick="openAddModal('pouzivatelia')">Pridať</button>
+        <button class="btn btn-warning" data-section="pouzivatelia">Upraviť</button>
+        <button class="btn btn-danger" data-section="pouzivatelia">Vymazať</button>
+    </div>
+</div>
+</div> <!-- end section pouzivatelia -->
+
 <!-- Modal pre pridanie záznamu -->
 <div class="modal fade" id="addModal" tabindex="-1" aria-labelledby="addModalLabel" aria-hidden="true">
   <div class="modal-dialog">
@@ -414,7 +469,7 @@
 <script>
 // small navigation helper for admin sections
 (function(){
-    const sections = ['bezci','roky','stanoviska','gallery','sponsors'];
+    const sections = ['bezci','roky','stanoviska','gallery','sponsors','pouzivatelia'];
     function showSection(section){
         sections.forEach(function(s){
             const el = document.querySelector('.admin-section[data-section="'+s+'"]');
@@ -493,6 +548,13 @@
             {name: 'contact_phone', label: 'Kontakt telefón', type: 'text', required: false},
             {name: 'url', label: 'URL (web)', type: 'text', required: false},
             {name: 'logo', label: 'Logo (obrázok)', type: 'file', required: false}
+        ],
+        pouzivatelia: [
+            {name: 'meno', label: 'Meno', type: 'text', required: true},
+            {name: 'priezvisko', label: 'Priezvisko', type: 'text', required: true},
+            {name: 'email', label: 'Email', type: 'email', required: true},
+            {name: 'heslo', label: 'Heslo (zanechajte prázdne ak nemeníte)', type: 'password', required: false},
+            {name: 'admin', label: 'Admin', type: 'select', options: ['0','1'], required: false}
         ]
     };
 
@@ -575,6 +637,7 @@
                         else if (window.currentDeleteSection === 'roky') info = 'rok ' + data.item.rok;
                         else if (window.currentDeleteSection === 'stanoviska') info = data.item.nazov;
                         else if (window.currentDeleteSection === 'sponsors') info = data.item.name;
+                        else if (window.currentDeleteSection === 'pouzivatelia') info = (data.item.meno || '') + ' ' + (data.item.priezvisko || '');
 
                         if (confirm('Naozaj chcete vymazať záznam: ' + info + '?')) {
                             csrfFetch('/?c=Admin&a=delete&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id), { method: 'POST' })
@@ -664,158 +727,4 @@
                     if (data && data.success) location.reload();
                     else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
                 }).catch(function() { alert('Chyba pri ukladaní zmien.'); });
-        });
-    })();
 
-    // set/clear results year
-    function setResultsYear(id) {
-        if (!confirm('Nastaviť rok s ID ' + id + ' ako výsledkový rok?')) return;
-        csrfFetch('/?c=Admin&a=setResultsYear', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'id=' + encodeURIComponent(id)
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            if (data && data.success) location.reload();
-            else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
-        })
-        .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
-    }
-
-    function clearResultsYear() {
-        if (!confirm('Naozaj zrušiť vybraný výsledkový rok?')) return;
-        csrfFetch('/?c=Admin&a=setResultsYear', {
-            method: 'POST',
-            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-            body: 'id='
-        })
-        .then(function(res) { return res.json(); })
-        .then(function(data) {
-            if (data && data.success) location.reload();
-            else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
-        })
-        .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
-    }
-
-    // Gallery helpers and uploads
-    function openCreateAlbumModal() { const m = document.getElementById('createAlbumModal'); if (m) new bootstrap.Modal(m).show(); }
-    function openUploadModal(albumId) { const sel = document.getElementById('uploadAlbumSelect'); if (sel && albumId) { for (let i=0;i<sel.options.length;i++){ if (sel.options[i].value===String(albumId)){ sel.selectedIndex=i; break; } } } const m = document.getElementById('uploadModal'); if (m) new bootstrap.Modal(m).show(); }
-
-    (function attachCreateAlbum(){ const f = document.getElementById('createAlbumForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const fd = new FormData(f); csrfFetch('/?c=Admin&a=createAlbum', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
-
-    (function attachUploadForm(){ const f = document.getElementById('uploadForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const UPLOAD_MAX_BYTES = <?= (int)($upload_max_bytes ?? 0) ?>; const POST_MAX_BYTES = <?= (int)($post_max_bytes ?? 0) ?>; const input = document.getElementById('photosInput'); const files = input ? input.files : null; if (!files || files.length === 0) { alert('Vyberte aspoň jeden súbor.'); return; } let total = 0; for (let i=0;i<files.length;i++){ total += files[i].size; if (UPLOAD_MAX_BYTES > 0 && files[i].size > UPLOAD_MAX_BYTES){ alert('Súbor "' + files[i].name + '" je príliš veľký.'); return; } } if (POST_MAX_BYTES > 0 && total > POST_MAX_BYTES) { alert('Súhrnná veľkosť súborov je príliš veľká.'); return; } const fd = new FormData(f); csrfFetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ alert('Nahrané ' + (data.files ? data.files.length : 0) + ' súborov.'); location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
-
-    const ASSET_GALLERY = '<?= isset($link) ? $link->asset('images/gallery') : '/images/gallery' ?>';
-    function openPhotosModal(albumId){ const body = document.getElementById('photosModalBody'); if (!body) return; body.innerHTML = '<p>Načítavam...</p>'; const modalEl = document.getElementById('photosModal'); if (modalEl) new bootstrap.Modal(modalEl).show(); fetch('/?c=Admin&a=listPhotos&album_id=' + encodeURIComponent(albumId)).then(function(res){ return res.json(); }).then(function(data){ if (!data || !data.success){ body.innerHTML = '<div class="alert alert-danger">Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba') + '</div>'; return; } const photos = data.photos || []; if (photos.length === 0){ body.innerHTML = '<p>Žiadne fotky v albume.</p>'; return; } let html = '<div class="d-flex flex-wrap gap-2">'; photos.forEach(function(p){ const src = ASSET_GALLERY + '/' + (p.album_id || albumId) + '/' + p.filename; html += '<div class="card" style="width:140px;"><img src="' + src + '" class="card-img-top" alt="' + (p.original_name || p.filename) + '" style="height:100px; object-fit:cover;" /><div class="card-body p-2"><div class="small text-truncate">' + (p.original_name || p.filename) + '</div><div class="d-flex mt-2"><a href="' + src + '" target="_blank" class="btn btn-sm btn-outline-primary me-1">Otvoriť</a><button class="btn btn-sm btn-danger ms-auto" onclick="deletePhotoConfirm(' + parseInt(p.ID_photo) + ')">Vymazať</button></div></div></div>'; }); html += '</div>'; body.innerHTML = html; }).catch(function(){ body.innerHTML = '<div class="alert alert-danger">Chyba pri načítaní fotiek.</div>'; }); }
-
-    function deletePhotoConfirm(photoId){ if (!confirm('Naozaj vymazať túto fotku?')) return; csrfFetch('/?c=Admin&a=delete&section=photos&id=' + encodeURIComponent(photoId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ const body = document.getElementById('photosModalBody'); const imgs = body ? body.querySelectorAll('img') : []; let albumId = null; if (imgs && imgs.length){ const parts = imgs[0].src.split('/'); albumId = parts[parts.length-2]; } if (albumId) openPhotosModal(albumId); else location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
-
-    function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return; csrfFetch('/?c=Admin&a=delete&section=albums&id=' + encodeURIComponent(albumId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
-
-    // --- Admin map picker: when add/edit modal contains x_pos/y_pos fields, show a small map picker image that
-    // lets admin click to select relative coordinates (0..1). The picker will fill inputs and show a small marker.
-    (function(){
-        // use PHP asset helper so static analysis can resolve the file
-        const ADMIN_MAP_IMG = '<?= isset($link) ? $link->asset("images/mapa_MartinNEW.png") : "/images/mapa_MartinNEW.png" ?>';
-
-        // create picker HTML
-        function createPickerHtml() {
-            var html = '';
-            html += '<div class="admin-map-picker mt-3">';
-            html += '<div class="mb-2"><small class="text-muted">Vyberte pozíciu na mape (kliknutím) alebo zadajte čísla (0..1).</small></div>';
-            html += '<div style="position:relative; display:inline-block; max-width:100%;">';
-            html += '<img id="adminMapImg" src="' + ADMIN_MAP_IMG + '" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
-            html += '<div id="adminMapMarker" style="position:absolute;width:14px;height:14px;border-radius:7px;background:rgba(220,53,69,0.9);border:2px solid white;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>';
-            html += '</div>';
-            html += '<div class="mt-2"><button type="button" id="clearMapPos" class="btn btn-sm btn-outline-secondary">Vymazať pozíciu</button></div>';
-            html += '</div>';
-            return html;
-         }
-
-        // Install picker into modal when it opens
-        document.addEventListener('shown.bs.modal', function(ev){
-            try {
-                // target addModal or editModal
-                var modal = ev.target;
-                if (!modal) return;
-                // add modal body where dynamic fields are rendered
-                var body = modal.querySelector('#addFormBody') || modal.querySelector('#editFormBody');
-                if (!body) return;
-                // only for stanoviska
-                var xInput = body.querySelector('input[name="x_pos"]');
-                var yInput = body.querySelector('input[name="y_pos"]');
-                if (!xInput || !yInput) return;
-
-                // if picker already exists, do nothing
-                if (body.querySelector('.admin-map-picker')) return;
-
-                // inject picker
-                var wrapper = document.createElement('div');
-                wrapper.innerHTML = createPickerHtml();
-                body.appendChild(wrapper);
-
-                var img = body.querySelector('#adminMapImg');
-                var marker = body.querySelector('#adminMapMarker');
-                var clearBtn = body.querySelector('#clearMapPos');
-
-                function setMarkerRel(relX, relY) {
-                    if (!img) return;
-                    // position marker by percentages relative to image container
-                     marker.style.left = (relX * 100) + '%';
-                     marker.style.top = (relY * 100) + '%';
-                     marker.style.display = 'block';
-                 }
-
-                img.addEventListener('click', function(e){
-                    var rect = img.getBoundingClientRect();
-                    var relX = (e.clientX - rect.left) / rect.width;
-                    var relY = (e.clientY - rect.top) / rect.height;
-                    relX = Math.min(Math.max(relX,0),1);
-                    relY = Math.min(Math.max(relY,0),1);
-                    // set inputs with 6 decimal places
-                    xInput.value = relX.toFixed(6);
-                    yInput.value = relY.toFixed(6);
-                    setMarkerRel(relX, relY);
-                });
-
-                // if inputs already have values, show marker
-                if (xInput.value !== '' && yInput.value !== '') {
-                    var vx = parseFloat(xInput.value);
-                    var vy = parseFloat(yInput.value);
-                    if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
-                }
-
-                clearBtn.addEventListener('click', function(){
-                    xInput.value = '';
-                    yInput.value = '';
-                    marker.style.display = 'none';
-                });
-
-                // when inputs change manually, update marker
-                xInput.addEventListener('input', function(){
-                    var vx = parseFloat(xInput.value);
-                    var vy = parseFloat(yInput.value);
-                    if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
-                    else marker.style.display = 'none';
-                });
-                yInput.addEventListener('input', function(){
-                    var vx = parseFloat(xInput.value);
-                    var vy = parseFloat(yInput.value);
-                    if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
-                    else marker.style.display = 'none';
-                });
-
-                // handle modal hide: remove picker to avoid duplicates next time
-                modal.addEventListener('hidden.bs.modal', function(){
-                    var p = body.querySelector('.admin-map-picker'); if (p) p.remove();
-                }, { once: true });
-
-            } catch (err) {
-                console.error('Map picker init error', err);
-            }
-        });
-    })();
-
-})();
-</script>
