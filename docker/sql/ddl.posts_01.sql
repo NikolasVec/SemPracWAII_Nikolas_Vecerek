@@ -65,6 +65,8 @@ CREATE TABLE `Bezec`
     `cas_dobehnutia` TIME DEFAULT NULL,
     `ID_roka` INT NOT NULL,
     PRIMARY KEY (`ID_bezca`),
+    -- Prevent duplicate registrations: same email cannot be used for the same year
+    UNIQUE KEY `uniq_bezec_email_roka` (`email`, `ID_roka`),
     CONSTRAINT `fk_bezec_rok`
         FOREIGN KEY (`ID_roka`)
             REFERENCES `rokKonania` (`ID_roka`)
@@ -200,5 +202,3 @@ WHERE rk.ID_roka IN (SELECT DISTINCT ID_roka FROM Bezec);
 -- Ensure empty-string coordinates are normalized to NULL
 UPDATE `Stanovisko` SET x_pos = NULL WHERE x_pos = '';
 UPDATE `Stanovisko` SET y_pos = NULL WHERE y_pos = '';
-
-

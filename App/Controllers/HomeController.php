@@ -61,8 +61,6 @@ class HomeController extends BaseController
      *
      * This action serves the HTML view for the contact page, which is accessible to all users without any
      * authorization.
-     *
-     * @return Response The response object containing the rendered HTML for the contact page.
      */
     public function mapa(Request $request): Response
     {
@@ -147,16 +145,37 @@ class HomeController extends BaseController
                             $stmt->execute([$rok, date('Y-m-d')]);
                             $id_roka = $conn->lastInsertId();
                         }
-                        // Uloz bezca - prepared statement
-                        $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
-                        $stmt->execute([$meno, $priezvisko, $email, $pohlavieStored, $id_roka]);
-                        // Aktualizuj pocet_ucastnikov v rokKonania
-                        $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
-                        $stmt->execute([$id_roka]);
-                        $pocet = $stmt->fetch()['pocet'];
-                        $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
-                        $stmt->execute([$pocet, $id_roka]);
-                        $success = 'Registrácia prebehla úspešne!';
+
+                        // --- New: prevent duplicate registration for same email in the same year ---
+                        $check = $conn->prepare('SELECT COUNT(*) AS cnt FROM Bezec WHERE email = ? AND ID_roka = ?');
+                        $check->execute([$email, $id_roka]);
+                        $exists = (int)$check->fetchColumn();
+                        if ($exists > 0) {
+                            $error = 'Tento email je už registrovaný na tohtoročný beh.';
+                        } else {
+                            // Uloz bezca - prepared statement
+                            $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
+                            $stmt->execute([$meno, $priezvisko, $email, $pohlavieStored, $id_roka]);
+                            // Aktualizuj pocet_ucastnikov v rokKonania
+                            $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
+                            $stmt->execute([$id_roka]);
+                            $pocet = $stmt->fetch()['pocet'];
+                            $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                            $stmt->execute([$pocet, $id_roka]);
+                            $success = 'Registrácia prebehla úspešne!';
+                        }
+                    } catch (\PDOException $e) {
+                        // Duplicate-entry for unique constraint (MySQL error code 1062 / SQLSTATE 23000)
+                        $sqlState = $e->getCode();
+                        $mysqlErrNo = null;
+                        if (is_array($e->errorInfo) && isset($e->errorInfo[1])) {
+                            $mysqlErrNo = $e->errorInfo[1];
+                        }
+                        if ($sqlState === '23000' || $mysqlErrNo === 1062) {
+                            $error = 'Tento email je už registrovaný na tohtoročný beh.';
+                        } else {
+                            $error = 'Chyba pri registrácii: ' . $e->getMessage();
+                        }
                     } catch (\Exception $e) {
                         $error = 'Chyba pri registrácii: ' . $e->getMessage();
                     }
