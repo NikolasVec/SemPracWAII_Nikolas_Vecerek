@@ -213,6 +213,101 @@ BEGIN
 END;//
 DELIMITER ;
 
+-- NOVÉ triggre: aktualizácia zabehnute_kilometre a vypite_piva v Pouzivatelia
+DELIMITER //
+CREATE TRIGGER bezec_after_insert_update_stats
+AFTER INSERT ON Bezec
+FOR EACH ROW
+BEGIN
+    DECLARE v_dlzka DECIMAL(7,2) DEFAULT 0.00;
+    DECLARE v_stanovisk INT DEFAULT 0;
+
+    -- len ak bežec má zaznamenaný čas dorazenia
+    IF NEW.cas_dobehnutia IS NOT NULL THEN
+        SELECT COALESCE(dlzka_behu, 0.00), COALESCE(pocet_stanovisk, 0)
+        INTO v_dlzka, v_stanovisk
+        FROM rokKonania
+        WHERE ID_roka = NEW.ID_roka
+        LIMIT 1;
+
+        UPDATE Pouzivatelia
+        SET zabehnute_kilometre = COALESCE(zabehnute_kilometre, 0) + v_dlzka,
+            vypite_piva = COALESCE(vypite_piva, 0) + v_stanovisk
+        WHERE email = NEW.email;
+    END IF;
+END;//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER bezec_after_delete_update_stats
+AFTER DELETE ON Bezec
+FOR EACH ROW
+BEGIN
+    DECLARE v_dlzka DECIMAL(7,2) DEFAULT 0.00;
+    DECLARE v_stanovisk INT DEFAULT 0;
+
+    -- iba ak vymazávaný bežec mal čas (inak sa nič nepripisovalo)
+    IF OLD.cas_dobehnutia IS NOT NULL THEN
+        SELECT COALESCE(dlzka_behu, 0.00), COALESCE(pocet_stanovisk, 0)
+        INTO v_dlzka, v_stanovisk
+        FROM rokKonania
+        WHERE ID_roka = OLD.ID_roka
+        LIMIT 1;
+
+        UPDATE Pouzivatelia
+        SET zabehnute_kilometre = GREATEST(COALESCE(zabehnute_kilometre, 0) - v_dlzka, 0),
+            vypite_piva = GREATEST(COALESCE(vypite_piva, 0) - v_stanovisk, 0)
+        WHERE email = OLD.email;
+    END IF;
+END;//
+DELIMITER ;
+
+DELIMITER //
+CREATE TRIGGER bezec_after_update_update_stats
+AFTER UPDATE ON Bezec
+FOR EACH ROW
+BEGIN
+    DECLARE v_old_dlzka DECIMAL(7,2) DEFAULT 0.00;
+    DECLARE v_old_stanovisk INT DEFAULT 0;
+    DECLARE v_new_dlzka DECIMAL(7,2) DEFAULT 0.00;
+    DECLARE v_new_stanovisk INT DEFAULT 0;
+
+    -- staré hodnoty (pre OLD.ID_roka)
+    IF OLD.cas_dobehnutia IS NOT NULL THEN
+        SELECT COALESCE(dlzka_behu, 0.00), COALESCE(pocet_stanovisk, 0)
+        INTO v_old_dlzka, v_old_stanovisk
+        FROM rokKonania
+        WHERE ID_roka = OLD.ID_roka
+        LIMIT 1;
+    END IF;
+
+    -- nové hodnoty (pre NEW.ID_roka)
+    IF NEW.cas_dobehnutia IS NOT NULL THEN
+        SELECT COALESCE(dlzka_behu, 0.00), COALESCE(pocet_stanovisk, 0)
+        INTO v_new_dlzka, v_new_stanovisk
+        FROM rokKonania
+        WHERE ID_roka = NEW.ID_roka
+        LIMIT 1;
+    END IF;
+
+    -- Ak mal bežec starý čas, odpočítať staré štatistiky od pôvodného používateľa
+    IF OLD.cas_dobehnutia IS NOT NULL THEN
+        UPDATE Pouzivatelia
+        SET zabehnute_kilometre = GREATEST(COALESCE(zabehnute_kilometre, 0) - v_old_dlzka, 0),
+            vypite_piva = GREATEST(COALESCE(vypite_piva, 0) - v_old_stanovisk, 0)
+        WHERE email = OLD.email;
+    END IF;
+
+    -- Ak má bežec nový čas, pridať nové štatistiky novému (alebo rovnakému) používateľovi
+    IF NEW.cas_dobehnutia IS NOT NULL THEN
+        UPDATE Pouzivatelia
+        SET zabehnute_kilometre = COALESCE(zabehnute_kilometre, 0) + v_new_dlzka,
+            vypite_piva = COALESCE(vypite_piva, 0) + v_new_stanovisk
+        WHERE email = NEW.email;
+    END IF;
+END;//
+DELIMITER ;
+
 -- Po vložení bežcov nastav správny počet účastníkov v rokKonania (bezpečne)
 UPDATE rokKonania rk
 SET pocet_ucastnikov = (
@@ -224,3 +319,26 @@ WHERE rk.ID_roka IN (SELECT DISTINCT ID_roka FROM Bezec);
 -- Ensure empty-string coordinates are normalized to NULL
 UPDATE `Stanovisko` SET x_pos = NULL WHERE x_pos = '';
 UPDATE `Stanovisko` SET y_pos = NULL WHERE y_pos = '';
+
+DELIMITER //
+CREATE TRIGGER rokKonania_after_update_resync_stats
+AFTER UPDATE ON rokKonania
+FOR EACH ROW
+BEGIN
+    DECLARE diff_dlzka DECIMAL(7,2) DEFAULT 0.00;
+    DECLARE diff_stan INT DEFAULT 0;
+
+    SET diff_dlzka = COALESCE(NEW.dlzka_behu, 0.00) - COALESCE(OLD.dlzka_behu, 0.00);
+    SET diff_stan = COALESCE(NEW.pocet_stanovisk, 0) - COALESCE(OLD.pocet_stanovisk, 0);
+
+    IF diff_dlzka <> 0 OR diff_stan <> 0 THEN
+        -- Only apply to runners that actually have a recorded finish time
+        UPDATE Pouzivatelia p
+        SET p.zabehnute_kilometre = GREATEST(COALESCE(p.zabehnute_kilometre, 0) + diff_dlzka, 0),
+            p.vypite_piva = GREATEST(COALESCE(p.vypite_piva, 0) + diff_stan, 0)
+        WHERE p.email IN (
+            SELECT b.email FROM Bezec b WHERE b.ID_roka = NEW.ID_roka AND b.cas_dobehnutia IS NOT NULL
+        );
+    END IF;
+END;//
+DELIMITER ;

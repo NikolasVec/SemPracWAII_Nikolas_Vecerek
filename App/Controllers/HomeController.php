@@ -312,6 +312,30 @@ class HomeController extends BaseController
         }
 
         $identity = $this->user->getIdentity();
-        return $this->html(compact('identity'));
+
+        // Determine whether the user is registered for the current year's run
+        $isRegisteredThisYear = false;
+        try {
+            $conn = \Framework\DB\Connection::getInstance();
+            $currentYear = date('Y');
+
+            // Find ID_roka for the current year (if exists)
+            $stmt = $conn->prepare('SELECT ID_roka FROM rokKonania WHERE rok = ? LIMIT 1');
+            $stmt->execute([$currentYear]);
+            $row = $stmt->fetch();
+            if ($row && isset($row['ID_roka'])) {
+                $idRoka = $row['ID_roka'];
+                // Check Bezec for a registration by this user's email
+                $stmt2 = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE email = ? AND ID_roka = ?');
+                $stmt2->execute([$identity->getEmail(), $idRoka]);
+                $cnt = (int)$stmt2->fetchColumn();
+                $isRegisteredThisYear = ($cnt > 0);
+            }
+        } catch (\Throwable $e) {
+            // If any DB error occurs, treat as not registered (fail-safe)
+            $isRegisteredThisYear = false;
+        }
+
+        return $this->html(compact('identity', 'isRegisteredThisYear'));
     }
 }

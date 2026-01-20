@@ -18,6 +18,13 @@ $view->setLayout('root');
                     <?php if ($identity === null): ?>
                         <div class="alert alert-warning">Používateľ nie je prihlásený.</div>
                     <?php else: ?>
+
+                        <?php if (isset($isRegisteredThisYear) && $isRegisteredThisYear): ?>
+                            <div class="alert alert-success">Ste registrovaný na tohtoročný beh.</div>
+                        <?php else: ?>
+                            <div class="alert alert-info">Nie ste registrovaný na tohtoročný beh. <a href="<?= $link->url('home.registrationPage') ?>">Registrovať sa</a></div>
+                        <?php endif; ?>
+
                         <dl class="row">
                             <dt class="col-sm-4">Meno a priezvisko</dt>
                             <dd class="col-sm-8"><?= htmlspecialchars($identity->getFirstName() . ' ' . $identity->getLastName()) ?></dd>
