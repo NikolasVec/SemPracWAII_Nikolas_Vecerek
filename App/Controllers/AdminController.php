@@ -96,7 +96,7 @@ class AdminController extends BaseController
             $usersTableExists = $stmt->fetchColumn() !== false;
             if ($usersTableExists) {
                 // select commonly useful fields (do not include password hash)
-                $pouzivatelia = $conn->query('SELECT ID_pouzivatela, meno, priezvisko, email, admin, zabehnute_kilometre, vypite_piva FROM Pouzivatelia ORDER BY ID_pouzivatela ASC')->fetchAll(\PDO::FETCH_ASSOC);
+                $pouzivatelia = $conn->query('SELECT ID_pouzivatela, meno, priezvisko, email, admin, pohlavie, datum_narodenia, zabehnute_kilometre, vypite_piva FROM Pouzivatelia ORDER BY ID_pouzivatela ASC')->fetchAll(\PDO::FETCH_ASSOC);
             }
         } catch (\Throwable $e) {
             $pouzivatelia = [];
@@ -170,7 +170,7 @@ class AdminController extends BaseController
                     return $this->json(['success' => false, 'message' => 'Neplatný email.']);
                 }
                 // accept only M or Z (case-insensitive) - adjust if your app supports other values
-                if (!preg_match('/^[MZmz]$/', $pohlavie)) {
+                if (!preg_match('/^[MZŽmzž]$/u', $pohlavie)) {
                     return $this->json(['success' => false, 'message' => 'Neplatné pohlavie.']);
                 }
 
@@ -191,6 +191,18 @@ class AdminController extends BaseController
                     } else {
                         return $this->json(['success' => false, 'message' => 'Neplatný formát času (očakávané H:MM alebo H:MM:SS).']);
                     }
+                }
+
+                // --- New: verify that the provided email exists in Pouzivatelia ---
+                $u = $conn->prepare('SELECT COUNT(*) FROM Pouzivatelia WHERE email = ?');
+                $u->execute([$email]);
+                $userCount = (int)$u->fetchColumn();
+                if ($userCount === 0) {
+                    return $this->json([
+                        'success' => false,
+                        'message' => 'Zadaný email nie je zaregistrovaný ako používateľ.',
+                        'userNotRegistered' => true
+                    ]);
                 }
 
                 $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, cas_dobehnutia, ID_roka) VALUES (?, ?, ?, ?, ?, ?)');
@@ -340,23 +352,41 @@ class AdminController extends BaseController
                 $heslo = $_POST['heslo'] ?? '';
                 $adminFlag = isset($_POST['admin']) ? ($_POST['admin'] ? 1 : 0) : 0;
 
+                // new fields
+                $pohlavie = trim($_POST['pohlavie'] ?? '');
+                $datum = trim($_POST['datum_narodenia'] ?? '');
+                $kilometre = trim($_POST['zabehnute_kilometre'] ?? '');
+                $vypite = trim($_POST['vypite_piva'] ?? '');
+
                 if ($meno === '' || $priezvisko === '' || $email === '') {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     return $this->json(['success' => false, 'message' => 'Neplatný email.']);
                 }
+                // validate gender if provided (accept M or Z)
+                if ($pohlavie !== '' && !preg_match('/^[MZŽmzž]$/u', $pohlavie)) {
+                    return $this->json(['success' => false, 'message' => 'Neplatné pohlavie.']);
+                }
+                // validate date if provided
+                if ($datum !== '' && !$this->isValidDateYmd($datum)) {
+                    return $this->json(['success' => false, 'message' => 'Neplatný dátum narodenia (očakávané RRRR-MM-DD).']);
+                }
+                // numeric fields
+                $kilometreVal = ($kilometre === '' ? 0.0 : (is_numeric($kilometre) ? (float)$kilometre : 0.0));
+                $vypiteVal = ($vypite === '' ? 0 : (is_numeric($vypite) ? (int)$vypite : 0));
+
                 // password is optional but recommended; if provided, hash it
                 $hash = null;
                 if ($heslo !== '') {
                     $hash = password_hash($heslo, PASSWORD_DEFAULT);
                 }
 
-                // ensure table exists (lightweight)
-                $conn->exec("CREATE TABLE IF NOT EXISTS Pouzivatelia (ID_pouzivatela INT AUTO_INCREMENT PRIMARY KEY, meno VARCHAR(255), priezvisko VARCHAR(255), email VARCHAR(255) UNIQUE, heslo VARCHAR(255), admin TINYINT(1) DEFAULT 0, zabehnute_kilometre DOUBLE DEFAULT 0, vypite_piva INT DEFAULT 0)");
+                // ensure table exists (lightweight) - add new columns pohlavie and datum_narodenia
+                $conn->exec("CREATE TABLE IF NOT EXISTS Pouzivatelia (ID_pouzivatela INT AUTO_INCREMENT PRIMARY KEY, meno VARCHAR(255), priezvisko VARCHAR(255), email VARCHAR(255) UNIQUE, heslo VARCHAR(255), admin TINYINT(1) DEFAULT 0, pohlavie VARCHAR(10) DEFAULT 'M', datum_narodenia DATE NULL, zabehnute_kilometre DOUBLE DEFAULT 0, vypite_piva INT DEFAULT 0)");
 
-                $stmt = $conn->prepare('INSERT INTO Pouzivatelia (meno, priezvisko, email, heslo, admin, zabehnute_kilometre, vypite_piva) VALUES (?, ?, ?, ?, ?, 0, 0)');
-                $stmt->execute([$meno, $priezvisko, $email, $hash, (int)$adminFlag]);
+                $stmt = $conn->prepare('INSERT INTO Pouzivatelia (meno, priezvisko, email, heslo, admin, pohlavie, datum_narodenia, zabehnute_kilometre, vypite_piva) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?)');
+                $stmt->execute([$meno, $priezvisko, $email, $hash, (int)$adminFlag, ($pohlavie === '' ? null : strtoupper($pohlavie)), ($datum === '' ? null : $datum), $kilometreVal, $vypiteVal]);
 
                 return $this->json(['success' => true]);
             } else {
@@ -508,7 +538,7 @@ class AdminController extends BaseController
                 $stmt = $conn->prepare('SELECT * FROM Stanovisko WHERE ID_stanoviska = ?');
             } elseif ($section === 'pouzivatelia') {
                 // fetch user record without password
-                $stmt = $conn->prepare('SELECT ID_pouzivatela, meno, priezvisko, email, admin, zabehnute_kilometre, vypite_piva FROM Pouzivatelia WHERE ID_pouzivatela = ?');
+                $stmt = $conn->prepare('SELECT ID_pouzivatela, meno, priezvisko, email, admin, pohlavie, datum_narodenia, zabehnute_kilometre, vypite_piva FROM Pouzivatelia WHERE ID_pouzivatela = ?');
             } else {
                 if ($section === 'sponsors') {
                     $stmt = $conn->prepare('SELECT * FROM sponsors WHERE ID_sponsor = ?');
@@ -556,21 +586,38 @@ class AdminController extends BaseController
                 $heslo = $_POST['heslo'] ?? '';
                 $adminFlag = isset($_POST['admin']) ? ($_POST['admin'] ? 1 : 0) : 0;
 
+                // new fields
+                $pohlavie = trim($_POST['pohlavie'] ?? '');
+                $datum = trim($_POST['datum_narodenia'] ?? '');
+                $kilometre = trim($_POST['zabehnute_kilometre'] ?? '');
+                $vypite = trim($_POST['vypite_piva'] ?? '');
+
                 if ($meno === '' || $priezvisko === '' || $email === '') {
                     return $this->json(['success' => false, 'message' => 'Chýbajúce údaje.']);
                 }
                 if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                     return $this->json(['success' => false, 'message' => 'Neplatný email.']);
                 }
+                // validate gender
+                if ($pohlavie !== '' && !preg_match('/^[MZŽmzž]$/u', $pohlavie)) {
+                    return $this->json(['success' => false, 'message' => 'Neplatné pohlavie.']);
+                }
+                // validate date
+                if ($datum !== '' && !$this->isValidDateYmd($datum)) {
+                    return $this->json(['success' => false, 'message' => 'Neplatný dátum narodenia (očakávané RRRR-MM-DD).']);
+                }
+
+                $kilometreVal = ($kilometre === '' ? 0.0 : (is_numeric($kilometre) ? (float)$kilometre : 0.0));
+                $vypiteVal = ($vypite === '' ? 0 : (is_numeric($vypite) ? (int)$vypite : 0));
 
                 // If password provided, hash it; otherwise keep existing
                 if ($heslo !== '') {
                     $hash = password_hash($heslo, PASSWORD_DEFAULT);
-                    $stmt = $conn->prepare('UPDATE Pouzivatelia SET meno=?, priezvisko=?, email=?, heslo=?, admin=? WHERE ID_pouzivatela=?');
-                    $stmt->execute([$meno, $priezvisko, $email, $hash, (int)$adminFlag, (int)$id]);
+                    $stmt = $conn->prepare('UPDATE Pouzivatelia SET meno=?, priezvisko=?, email=?, heslo=?, admin=?, pohlavie=?, datum_narodenia=?, zabehnute_kilometre=?, vypite_piva=? WHERE ID_pouzivatela=?');
+                    $stmt->execute([$meno, $priezvisko, $email, $hash, (int)$adminFlag, ($pohlavie === '' ? null : strtoupper($pohlavie)), ($datum === '' ? null : $datum), $kilometreVal, $vypiteVal, (int)$id]);
                 } else {
-                    $stmt = $conn->prepare('UPDATE Pouzivatelia SET meno=?, priezvisko=?, email=?, admin=? WHERE ID_pouzivatela=?');
-                    $stmt->execute([$meno, $priezvisko, $email, (int)$adminFlag, (int)$id]);
+                    $stmt = $conn->prepare('UPDATE Pouzivatelia SET meno=?, priezvisko=?, email=?, admin=?, pohlavie=?, datum_narodenia=?, zabehnute_kilometre=?, vypite_piva=? WHERE ID_pouzivatela=?');
+                    $stmt->execute([$meno, $priezvisko, $email, (int)$adminFlag, ($pohlavie === '' ? null : strtoupper($pohlavie)), ($datum === '' ? null : $datum), $kilometreVal, $vypiteVal, (int)$id]);
                 }
 
                 return $this->json(['success' => true]);
@@ -593,7 +640,7 @@ class AdminController extends BaseController
                     return $this->json(['success' => false, 'message' => 'Neplatný email.']);
                 }
                 // accept only M or Z (case-insensitive) - adjust if your app supports other values
-                if (!preg_match('/^[MZmz]$/', $pohlavie)) {
+                if (!preg_match('/^[MZŽmzž]$/u', $pohlavie)) {
                     return $this->json(['success' => false, 'message' => 'Neplatné pohlavie.']);
                 }
 

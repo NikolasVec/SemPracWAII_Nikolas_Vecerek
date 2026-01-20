@@ -576,7 +576,11 @@
             {name: 'priezvisko', label: 'Priezvisko', type: 'text', required: true},
             {name: 'email', label: 'Email', type: 'email', required: true},
             {name: 'heslo', label: 'Heslo (zanechajte prázdne ak nemeníte)', type: 'password', required: false},
-            {name: 'admin', label: 'Admin', type: 'select', options: ['0','1'], required: false}
+            {name: 'admin', label: 'Admin', type: 'select', options: ['0','1'], required: false},
+            {name: 'pohlavie', label: 'Pohlavie', type: 'select', options: ['M','Z'], required: false},
+            {name: 'datum_narodenia', label: 'Dátum narodenia', type: 'date', required: false},
+            {name: 'zabehnute_kilometre', label: 'Zabehnuté kilometre', type: 'number', required: false, step: '0.01'},
+            {name: 'vypite_piva', label: 'Vypité piva', type: 'number', required: false, step: '1'}
         ]
     };
 
@@ -646,16 +650,63 @@
         addForm.addEventListener('submit', function(e) {
             e.preventDefault();
             const fd = new FormData(addForm);
+            // create or reuse notice area in modal (placed above form body)
+            let noticeEl = document.getElementById('addModalNotice');
+            if (!noticeEl) {
+                noticeEl = document.createElement('div');
+                noticeEl.id = 'addModalNotice';
+                const body = document.querySelector('#addModal .modal-body');
+                if (body) body.parentNode.insertBefore(noticeEl, body);
+            }
+            noticeEl.innerHTML = '';
+
             csrfFetch('/?c=Admin&a=add&section=' + encodeURIComponent(currentSection), { method: 'POST', body: fd })
                 .then(function(res) { return res.json(); })
                 .then(function(data) {
                     if (data && data.success) {
                         location.reload();
+                        return;
+                    }
+
+                    // If server indicates the runner email is not a registered user, show an actionable notice
+                    if (data && data.userNotRegistered) {
+                        noticeEl.innerHTML = '<div class="alert alert-warning">Zadaný email nie je zaregistrovaný ako používateľ.<div class="mt-2"><button type="button" class="btn btn-sm btn-primary" id="createUserBtn">Vytvoriť používateľa</button> <button type="button" class="btn btn-sm btn-secondary" id="changeEmailBtn">Zmeniť email</button></div></div>';
+                        // Attach handlers
+                        const createBtn = document.getElementById('createUserBtn');
+                        const changeBtn = document.getElementById('changeEmailBtn');
+                        if (createBtn) {
+                            createBtn.onclick = function() {
+                                // open user create form inside same modal
+                                openAddModal('pouzivatelia');
+                                // after modal content is rendered, prefill email if possible
+                                setTimeout(function() {
+                                    const emailInput = document.querySelector('#addForm [name="email"]');
+                                    if (emailInput && fd.get('email')) emailInput.value = fd.get('email');
+                                }, 100);
+                            };
+                        }
+                        if (changeBtn) {
+                            changeBtn.onclick = function() {
+                                // bring focus back to email field in current bezci form
+                                const emailInput = document.querySelector('#addForm [name="email"]');
+                                if (emailInput) { emailInput.value = ''; emailInput.focus(); }
+                                noticeEl.innerHTML = '';
+                            };
+                        }
+                        return;
+                    }
+
+                    // Other errors: show inside modal if possible, fallback to alert
+                    const msg = data && data.message ? data.message : 'Neznáma chyba.';
+                    if (noticeEl) {
+                        noticeEl.innerHTML = '<div class="alert alert-danger">Chyba: ' + msg + '</div>';
                     } else {
-                        alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+                        alert('Chyba: ' + msg);
                     }
                 })
-                .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
+                .catch(function() {
+                    alert('Chyba pri komunikácii so serverom.');
+                });
         });
     })();
 

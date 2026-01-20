@@ -109,6 +109,38 @@ class HomeController extends BaseController
     {
         $success = null;
         $error = null;
+        $userNotRegistered = false; // flag to indicate email isn't a registered user
+
+        // Prepare form defaults. If user is logged in, prefill with their identity data.
+        $form = [
+            'meno' => '',
+            'priezvisko' => '',
+            'email' => '',
+            'pohlavie' => 'M'
+        ];
+
+        if ($this->user->isLoggedIn()) {
+            $identity = $this->user->getIdentity();
+            // DbUser exposes getFirstName/getLastName/getEmail
+            if (method_exists($identity, 'getFirstName')) {
+                $form['meno'] = $identity->getFirstName();
+            }
+            if (method_exists($identity, 'getLastName')) {
+                $form['priezvisko'] = $identity->getLastName();
+            }
+            if (method_exists($identity, 'getEmail')) {
+                $form['email'] = $identity->getEmail();
+            }
+            // Prefill pohlavie if identity provides it (getGender)
+            if (method_exists($identity, 'getGender')) {
+                $g = mb_strtoupper(trim($identity->getGender()), 'UTF-8');
+                if ($g === 'Z') {
+                    $g = 'Ž';
+                }
+                $form['pohlavie'] = ($g === 'Ž') ? 'Ž' : 'M';
+            }
+        }
+
         if ($request->isPost()) {
             // Trim and read inputs
             $meno = trim((string)$request->post('meno'));
@@ -116,6 +148,12 @@ class HomeController extends BaseController
             $email = trim((string)$request->post('email'));
             $pohlavie = trim((string)$request->post('pohlavie'));
             $rok = date('Y');
+
+            // Update form with submitted values so they persist on validation error
+            $form['meno'] = $meno;
+            $form['priezvisko'] = $priezvisko;
+            $form['email'] = $email;
+            $form['pohlavie'] = $pohlavie ?: $form['pohlavie'];
 
             // Server-side validation: required fields
             if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '') {
@@ -153,16 +191,26 @@ class HomeController extends BaseController
                         if ($exists > 0) {
                             $error = 'Tento email je už registrovaný na tohtoročný beh.';
                         } else {
-                            // Uloz bezca - prepared statement
-                            $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
-                            $stmt->execute([$meno, $priezvisko, $email, $pohlavieStored, $id_roka]);
-                            // Aktualizuj pocet_ucastnikov v rokKonania
-                            $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
-                            $stmt->execute([$id_roka]);
-                            $pocet = $stmt->fetch()['pocet'];
-                            $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
-                            $stmt->execute([$pocet, $id_roka]);
-                            $success = 'Registrácia prebehla úspešne!';
+                            // --- New: ensure email belongs to a registered Pouzivatelia user ---
+                            $u = $conn->prepare('SELECT COUNT(*) FROM Pouzivatelia WHERE email = ?');
+                            $u->execute([$email]);
+                            $userCount = (int)$u->fetchColumn();
+                            if ($userCount === 0) {
+                                // Friendly, actionable message for users
+                                $error = 'Zadaný email nie je zaregistrovaný ako používateľ. Prosím prihláste sa alebo si najprv vytvorte účet.';
+                                $userNotRegistered = true;
+                            } else {
+                                // Uloz bezca - prepared statement
+                                $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
+                                $stmt->execute([$meno, $priezvisko, $email, $pohlavieStored, $id_roka]);
+                                // Aktualizuj pocet_ucastnikov v rokKonania
+                                $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
+                                $stmt->execute([$id_roka]);
+                                $pocet = $stmt->fetch()['pocet'];
+                                $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                                $stmt->execute([$pocet, $id_roka]);
+                                $success = 'Registrácia prebehla úspešne!';
+                            }
                         }
                     } catch (\PDOException $e) {
                         // Duplicate-entry for unique constraint (MySQL error code 1062 / SQLSTATE 23000)
@@ -171,7 +219,11 @@ class HomeController extends BaseController
                         if (is_array($e->errorInfo) && isset($e->errorInfo[1])) {
                             $mysqlErrNo = $e->errorInfo[1];
                         }
-                        if ($sqlState === '23000' || $mysqlErrNo === 1062) {
+                        // If FK constraint fails (no referenced user) MySQL error is 1452
+                        if ($sqlState === '23000' && $mysqlErrNo === 1452) {
+                            $error = 'Zadaný email nie je zaregistrovaný ako používateľ. Prosím prihláste sa alebo si najprv vytvorte účet.';
+                            $userNotRegistered = true;
+                        } elseif ($sqlState === '23000' || $mysqlErrNo === 1062) {
                             $error = 'Tento email je už registrovaný na tohtoročný beh.';
                         } else {
                             $error = 'Chyba pri registrácii: ' . $e->getMessage();
@@ -184,7 +236,9 @@ class HomeController extends BaseController
         }
         return $this->html([
             'success' => $success,
-            'error' => $error
+            'error' => $error,
+            'form' => $form,
+            'userNotRegistered' => $userNotRegistered
         ]);
     }
     public function resultsPage(Request $request): Response

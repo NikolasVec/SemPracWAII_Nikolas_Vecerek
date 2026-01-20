@@ -53,7 +53,26 @@ CREATE TABLE Stanovisko (
 
 
 -- ────────────────────────────────────────────────
--- Tabuľka BEZEC (1:N k rokKonania)
+-- Tabuľka POUZIVATELIA (users) - created before Bezec so FK can reference email
+-- ────────────────────────────────────────────────
+CREATE TABLE `Pouzivatelia` (
+    `ID_pouzivatela` INT NOT NULL AUTO_INCREMENT,
+    `meno` VARCHAR(50) NOT NULL,
+    `priezvisko` VARCHAR(50) NOT NULL,
+    `email` VARCHAR(100) NOT NULL UNIQUE,
+    `heslo` VARCHAR(255) NOT NULL,
+    `pohlavie` VARCHAR(10) DEFAULT 'M',
+    `datum_narodenia` DATE DEFAULT NULL,
+    `zabehnute_kilometre` DOUBLE DEFAULT 0,
+    `vypite_piva` INT DEFAULT 0,
+    `admin` BOOLEAN NOT NULL DEFAULT 0,
+    PRIMARY KEY (`ID_pouzivatela`)
+)  ENGINE=InnoDB
+   DEFAULT CHARSET = utf8mb4;
+
+-- ────────────────────────────────────────────────
+-- Tabuľka BEZEC (1:N k rokKonania) - now references Pouzivatelia.email
+-- Ak neexistuje používateľ s daným emailom, bežec vložený nebude môcť existovať
 -- ────────────────────────────────────────────────
 CREATE TABLE `Bezec`
 (
@@ -70,25 +89,15 @@ CREATE TABLE `Bezec`
     CONSTRAINT `fk_bezec_rok`
         FOREIGN KEY (`ID_roka`)
             REFERENCES `rokKonania` (`ID_roka`)
-            ON DELETE CASCADE
+            ON DELETE CASCADE,
+    -- Foreign key linking runner to a registered user by email
+    CONSTRAINT `fk_bezec_pouzivatel_email`
+        FOREIGN KEY (`email`)
+            REFERENCES `Pouzivatelia` (`email`)
+            ON DELETE RESTRICT
+            ON UPDATE CASCADE
 ) ENGINE=InnoDB
   DEFAULT CHARSET=utf8mb4;
-
--- Tabuľka pre používateľov
-CREATE TABLE `Pouzivatelia` (
-    `ID_pouzivatela` INT NOT NULL AUTO_INCREMENT,
-    `meno` VARCHAR(50) NOT NULL,
-    `priezvisko` VARCHAR(50) NOT NULL,
-    `email` VARCHAR(100) NOT NULL UNIQUE,
-    `heslo` VARCHAR(255) NOT NULL,
-    `datum_narodenia` DATE NOT NULL,
-    `pohlavie` ENUM('M', 'Z') NOT NULL,
-    `zabehnute_kilometre` DECIMAL(8,2) DEFAULT 0.00,
-    `vypite_piva` INT DEFAULT 0,
-    `admin` BOOLEAN NOT NULL DEFAULT 0,
-    PRIMARY KEY (`ID_pouzivatela`)
-)  ENGINE=InnoDB
-   DEFAULT CHARSET = utf8mb4;
 
 -- Tabuľka sponzorov (footer)
 CREATE TABLE `sponsors` (
@@ -125,20 +134,33 @@ VALUES (1, 'Pohostinstvo Sviečka', 'Ľatoveň', 'Štart behu.', 'https://www.go
          (7, 'Pivovar Martins', 'Záturčie', 'Ciel behu.', 'https://www.google.com/maps/place/Pivovar+Martins/@49.0897252,18.9261914,543m/data=!3m2!1e3!4b1!4m6!3m5!1s0x4714ff47f07e382b:0xee51cd17a7b5c740!8m2!3d49.0897217!4d18.9287663!16s%2Fg%2F11g6mrx7g7!5m1!1e4?entry=ttu&g_ep=EgoyMDI2MDExMS4wIKXMDSoASAFQAw%3D%3D', 'https://opive.sk/wp-content/uploads/2023/05/Pivovar-Martins-01.jpg',0.503444, 0.110532, 2025);
 
 
+INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`, `admin`)
+VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0, 1),
+       ('Nikolas', 'Večerek', 'nikove17@gmail.com','$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', '2003-10-07', 'M', 0, 0, 0),
+       ('Ján', 'Novák', 'novak@gmail.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', NULL, 'M', 0, 0, 0),
+       ('Mária', 'Kováčová', 'kovac@gmial.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', NULL, 'Ž', 0, 0, 0),
+       ('Peter', 'Horváth', 'hornak@gmail.sk', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', NULL, 'M', 0, 0, 0),
+       ('Anna', 'Vargová', 'vargova@gmail.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyFK', NULL, 'Ž', 0, 0, 0),
+       ('Lucia', 'Bieliková', 'bielikova@gmail.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyFK', NULL, 'Ž', 0, 0, 0),
+       ('Martin', 'Farkaš', 'farkas@gmail.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyFK', NULL, 'M', 0, 0, 0),
+       ('Zuzana', 'Mlynarčíková', 'mlynarova@gmail.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyFK', NULL, 'Ž', 0, 0, 0),
+       ('Tomáš', 'Kučera', 'kucora@gmail.com', '$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyFK', NULL, 'M', 0, 0, 0);
+
+
 INSERT INTO `Bezec` (`ID_bezca`, `meno`, `priezvisko`,`pohlavie`, `email`, `ID_roka`)
 VALUES (1, 'Ján', 'Novák','M', 'novak@gmail.com', 2023),
-       (2, 'Mária', 'Kováčová','M', 'kovac@gmial.com',  2024),
+       (2, 'Mária', 'Kováčová','Ž', 'kovac@gmial.com',  2024),
        (3, 'Peter', 'Horváth','M', 'hornak@gmail.sk',  2024),
          (4, 'Anna', 'Vargová','Ž', 'vargova@gmail.com', 2025),
        (5, 'Lucia', 'Bieliková','Ž', 'bielikova@gmail.com', 2025),
          (6, 'Martin', 'Farkaš','M', 'farkas@gmail.com', 2025),
-         (7, 'Zuzana', 'Mlynarčíková','Ž', 'mlynarová@gmail.com', 2023),
-            (8, 'Tomáš', 'Kučera','M', 'kučora@gmail.com', 2023);
+         (7, 'Zuzana', 'Mlynarčíková','Ž', 'mlynarova@gmail.com', 2023),
+            (8, 'Tomáš', 'Kučera','M', 'kucora@gmail.com', 2023);
 
--- Vloženie administrátora do tabuľky Pouzivatelia
-INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`, `admin`)
-VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0, 1),
-       ('Nikolas', 'Večerek', 'nikove17@gmail.com','$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', '2003-10-07', 'M', 0, 0, 0);
+-- Vloženie administrátora do tabuľky Pouzivatelia (duplicate admin row removed because already inserted above)
+-- INSERT INTO `Pouzivatelia` (`meno`, `priezvisko`, `email`, `heslo`, `datum_narodenia`, `pohlavie`, `zabehnute_kilometre`, `vypite_piva`, `admin`)
+-- VALUES ('Admin', 'Admin', 'admin@example.com', '$2y$10$GRA8D27bvZZw8b85CAwRee9NH5nj4CQA6PDFMc90pN9Wi4VAWq3yq', '2000-01-01', 'M', 0, 0, 1),
+--        ('Nikolas', 'Večerek', 'nikove17@gmail.com','$2y$10$fPwteJOCC0jPTtAtJzWkpORDmVZYKaIBzWnY.bf56KuyG89iSuyFK', '2003-10-07', 'M', 0, 0, 0);
 
 -- Example sponsor
 INSERT INTO sponsors (name, contact_email, contact_phone, logo, url)

@@ -17,8 +17,9 @@ class DbUser implements IIdentity
     private bool $admin;
     private float $kilometres;
     private int $beers;
+    private string $gender; // 'M' or 'Ž'
 
-    public function __construct(int $id, string $firstName, string $lastName, string $email, bool $admin = false, float $kilometres = 0.0, int $beers = 0)
+    public function __construct(int $id, string $firstName, string $lastName, string $email, bool $admin = false, float $kilometres = 0.0, int $beers = 0, string $gender = 'M')
     {
         $this->id = $id;
         $this->firstName = $firstName;
@@ -27,6 +28,12 @@ class DbUser implements IIdentity
         $this->admin = $admin;
         $this->kilometres = $kilometres;
         $this->beers = $beers;
+        // Normalize gender variants (accept 'Z' or 'Ž' -> 'Ž') and default to 'M'
+        $g = mb_strtoupper(trim($gender), 'UTF-8');
+        if ($g === 'Z') {
+            $g = 'Ž';
+        }
+        $this->gender = ($g === 'Ž') ? 'Ž' : 'M';
     }
 
     public function getId(): int
@@ -47,6 +54,14 @@ class DbUser implements IIdentity
     public function getEmail(): string
     {
         return $this->email;
+    }
+
+    /**
+     * Returns the user's gender (single character: 'M' or 'Ž').
+     */
+    public function getGender(): string
+    {
+        return $this->gender;
     }
 
     /**
@@ -92,6 +107,7 @@ class DbUser implements IIdentity
             'admin' => $this->admin,
             'kilometres' => isset($this->kilometres) ? (float)$this->kilometres : 0.0,
             'beers' => $this->beers ?? 0,
+            'gender' => $this->gender
         ];
     }
 
@@ -104,5 +120,11 @@ class DbUser implements IIdentity
         $this->admin = (bool)($data['admin'] ?? false);
         $this->kilometres = isset($data['kilometres']) ? (float)$data['kilometres'] : 0.0;
         $this->beers = isset($data['beers']) ? (int)$data['beers'] : 0;
+        $gender = isset($data['gender']) ? (string)$data['gender'] : 'M';
+        $g = mb_strtoupper(trim($gender), 'UTF-8');
+        if ($g === 'Z') {
+            $g = 'Ž';
+        }
+        $this->gender = ($g === 'Ž') ? 'Ž' : 'M';
     }
 }
