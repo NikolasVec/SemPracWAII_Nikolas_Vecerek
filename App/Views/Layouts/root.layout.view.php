@@ -3,6 +3,7 @@
 /** @var string $contentHTML */
 /** @var \Framework\Auth\AppUser $user */
 /** @var \Framework\Support\LinkGenerator $link */
+/** @var \App\Support\LayoutPresenter $layoutPresenter */
 
 // layoutPresenter is injected by the framework (ViewResponse) and is available here
 // as $layoutPresenter. Avoid instantiating presenters in the view.

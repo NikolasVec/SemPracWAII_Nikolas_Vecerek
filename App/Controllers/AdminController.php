@@ -136,8 +136,6 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
 
-        // CSRF validation handled centrally in App::run()
-
         try {
             if ($section === 'bezci') {
                 $meno = trim($_POST['meno'] ?? '');
@@ -341,8 +339,6 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
 
-        // CSRF validation handled centrally in App::run()
-
         if (!$section || !$this->isValidId($id)) {
             return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo neplatné ID.']);
         }
@@ -485,8 +481,6 @@ class AdminController extends BaseController
         if (!$request->isPost()) {
             return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
-
-        // CSRF validation handled centrally in App::run()
 
         if (!$section || !$this->isValidId($id)) {
             return $this->json(['success' => false, 'message' => 'Chýba sekcia alebo neplatné ID.']);
@@ -666,8 +660,6 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
 
-        // CSRF validation handled centrally in App::run()
-
         $id = $_POST['id'] ?? null; // ID_roka or empty to clear
         try {
             $conn = Connection::getInstance();
@@ -710,8 +702,6 @@ class AdminController extends BaseController
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
             return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
-
-        // CSRF validation handled centrally in App::run()
 
         $name = trim($_POST['name'] ?? '');
         $description = trim($_POST['description'] ?? '');
@@ -763,7 +753,6 @@ class AdminController extends BaseController
             return $this->json(['success' => false, 'message' => 'Nesprávna metóda.']);
         }
 
-        // CSRF validation handled centrally in App::run()
 
         $albumId = $_POST['album_id'] ?? null;
         // If $_POST and $_FILES are empty on a POST request, likely PHP's post_max_size/upload_max_filesize were exceeded
