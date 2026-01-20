@@ -17,6 +17,7 @@ $view->setLayout('auth');
                         <?= @$message ?>
                     </div>
                     <form class="form-signin" method="post" action="<?= $link->url("login") ?>">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
                         <div class="form-label-group mb-3">
                             <label for="email" class="form-label">Email</label>
                             <input name="email" type="email" id="email" class="form-control" placeholder="Email"

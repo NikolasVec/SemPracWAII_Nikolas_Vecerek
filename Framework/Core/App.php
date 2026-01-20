@@ -9,6 +9,7 @@ use Framework\Http\HttpException;
 use Framework\Http\Request;
 use Framework\Http\Responses\RedirectResponse;
 use Framework\Http\Responses\Response;
+use Framework\Http\Responses\JsonResponse;
 use Framework\Http\Session;
 use Framework\Support\LinkGenerator;
 
@@ -99,6 +100,20 @@ class App
 
             // Attempt to authorize the requested action.
             if ($this->router->getController()->authorize($this->request, $this->router->getAction())) {
+                // Central CSRF protection: validate any incoming POST before executing action
+                if ($this->request->isPost()) {
+                    $token = $this->request->post('_csrf') ?? $this->request->server('HTTP_X_CSRF_TOKEN') ?? $this->request->server('HTTP_X_CSRFTOKEN') ?? null;
+                    if (!$this->getSession()->validateCsrfToken($token)) {
+                        // For AJAX/JSON clients return a JSON error, otherwise throw 403
+                        if ($this->request->isAjax() || $this->request->wantsJson() || $this->request->isJson()) {
+                            (new JsonResponse(['success' => false, 'message' => 'Neplatný CSRF token.']))->send();
+                            return;
+                        } else {
+                            throw new HttpException(403, 'Neplatný CSRF token.');
+                        }
+                    }
+                }
+
                 // Call the specified action method on the controller with Request as required parameter (no reflection)
                 $response = call_user_func([$this->router->getController(), $this->router->getAction()], $this->request);
 

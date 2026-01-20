@@ -48,8 +48,22 @@ class AuthController extends BaseController
         $logged = null;
         if ($request->hasValue('submit')) {
             // Read email from form (input name changed to 'email')
-            $email = $request->value('email');
-            $logged = $this->app->getAuthenticator()->login($email, $request->value('password'));
+            $email = trim((string)$request->value('email'));
+            $password = $request->value('password');
+
+            // Server-side validation: require email and password
+            if ($email === '' || $password === null || $password === '') {
+                $message = 'E-mail a heslo sú povinné.';
+                return $this->html(compact('message'));
+            }
+
+            // Validate email format
+            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+                $message = 'Zadaný e-mail nemá správny formát.';
+                return $this->html(compact('message'));
+            }
+
+            $logged = $this->app->getAuthenticator()->login($email, $password);
             if ($logged) {
                 // Redirect admins to admin dashboard, non-admins to homepage
                 $appUser = $this->app->getAuthenticator()->getUser();

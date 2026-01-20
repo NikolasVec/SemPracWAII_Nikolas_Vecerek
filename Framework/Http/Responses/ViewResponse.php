@@ -74,6 +74,8 @@ class ViewResponse extends Response
             'layoutPresenter' => new LayoutPresenter($this->app->getAppUser(), $this->app->getLinkGenerator()),
             // footerPresenter provides presentation-ready footer data (keeps footer view simple)
             'footerPresenter' => new FooterPresenter($this->app->getLinkGenerator()),
+            // expose csrf token for forms and JS
+            'csrfToken' => $this->app->getSession()->getCsrfToken(),
         ];
 
         // Selected layout is controlled by the helper via reference; default to root layout

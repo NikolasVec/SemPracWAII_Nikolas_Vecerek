@@ -20,6 +20,7 @@
                     }
                     ?>
                     <form method="post" action="">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
                         <div class="mb-3">
                             <label for="meno" class="form-label">Meno:</label>
                             <input type="text" id="meno" name="meno" class="form-control" required>

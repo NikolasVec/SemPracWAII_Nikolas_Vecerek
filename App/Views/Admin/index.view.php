@@ -235,6 +235,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="addForm">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body" id="addFormBody">
           <!-- Dynamicky generované polia -->
         </div>
@@ -256,6 +257,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="deleteForm">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body">
           <label for="deleteId" class="form-label">Zadajte ID záznamu na vymazanie:</label>
           <input type="number" class="form-control" id="deleteId" name="deleteId" required>
@@ -278,6 +280,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="editIdForm">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body">
           <label for="editId" class="form-label">Zadajte ID záznamu na úpravu:</label>
           <input type="number" class="form-control" id="editId" name="editId" required>
@@ -300,6 +303,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="editForm">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body" id="editFormBody">
           <!-- Dynamicky generované polia -->
         </div>
@@ -321,6 +325,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="createAlbumForm">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label" for="createAlbumName">Názov *</label>
@@ -349,6 +354,7 @@
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
       <form id="uploadForm" enctype="multipart/form-data">
+        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body">
           <div class="mb-3">
             <label class="form-label" for="uploadAlbumSelect">Album</label>
@@ -400,6 +406,11 @@
 .admin-nav-btn.active{ box-shadow: inset 0 -3px 0 rgba(0,123,255,0.25); }
 </style>
 
+<!-- expose CSRF token for JS -->
+<script>
+    window.CSRF_TOKEN = '<?= htmlspecialchars((string)($csrfToken ?? '')) ?>';
+</script>
+
 <script>
 // small navigation helper for admin sections
 (function(){
@@ -435,360 +446,376 @@
 
 <script>
 // Admin UI script (cleaned, formatted)
-const formFields = {
-    bezci: [
-        {name: 'meno', label: 'Meno', type: 'text', required: true},
-        {name: 'priezvisko', label: 'Priezvisko', type: 'text', required: true},
-        {name: 'email', label: 'Email', type: 'email', required: true},
-        {name: 'pohlavie', label: 'Pohlavie', type: 'select', options: ['M', 'Ž'], required: true},
-        {name: 'cas_dobehnutia', label: 'Čas dobehnutia', type: 'time', required: false, step: 1},
-        {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
-    ],
-    roky: [
-        {name: 'rok', label: 'Rok', type: 'number', required: true},
-        {name: 'datum_konania', label: 'Dátum konania', type: 'date', required: true},
-        {name: 'dlzka_behu', label: 'Dĺžka behu (km)', type: 'number', required: false, step: '0.01'},
-        {name: 'pocet_stanovisk', label: 'Počet stanovísk', type: 'number', required: false, step: '1'}
-    ],
-    stanoviska: [
-        {name: 'nazov', label: 'Názov', type: 'text', required: true},
-        {name: 'poloha', label: 'Poloha', type: 'text', required: false},
-        {name: 'popis', label: 'Popis', type: 'textarea', required: false},
-        {name: 'mapa_odkaz', label: 'Odkaz na mapu', type: 'text', required: false},
-        {name: 'obrazok_odkaz', label: 'Odkaz na obrázok', type: 'text', required: false},
-        {name: 'x_pos', label: 'X (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
-        {name: 'y_pos', label: 'Y (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
-        {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
-    ],
-    sponsors: [
-        {name: 'name', label: 'Názov', type: 'text', required: true},
-        {name: 'contact_email', label: 'Kontakt email', type: 'email', required: false},
-        {name: 'contact_phone', label: 'Kontakt telefón', type: 'text', required: false},
-        {name: 'url', label: 'URL (web)', type: 'text', required: false},
-        {name: 'logo', label: 'Logo (obrázok)', type: 'file', required: false}
-    ]
-};
-
-let currentSection = null;
-let currentEditId = null;
-
-function openAddModal(section) {
-    currentSection = section;
-    const fields = formFields[section] || [];
-    let html = '';
-    fields.forEach(function(field) {
-        html += '<div class="mb-3">';
-        html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
-        if (field.type === 'select') {
-            html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
-            // when opening the "add" modal there's no preselected value, just render options
-            field.options.forEach(function(opt) { html += '<option value="' + opt + '">' + opt + '</option>'; });
-            html += '</select>';
-        } else if (field.type === 'textarea') {
-            html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '></textarea>';
-        } else {
-            html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
-        }
-        html += '</div>';
-    });
-
-    const addBody = document.getElementById('addFormBody');
-    if (addBody) addBody.innerHTML = html;
-    const modalEl = document.getElementById('addModal');
-    if (modalEl) new bootstrap.Modal(modalEl).show();
-}
-
-// Add form submit
-(function() {
-    const addForm = document.getElementById('addForm');
-    if (!addForm) return;
-    addForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const fd = new FormData(addForm);
-        fetch('/?c=Admin&a=add&section=' + encodeURIComponent(currentSection), { method: 'POST', body: fd })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data && data.success) {
-                    location.reload();
-                } else {
-                    alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
-                }
-            })
-            .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
-    });
-})();
-
-function openDeleteModal(section) {
-    window.currentDeleteSection = section;
-    const el = document.getElementById('deleteId'); if (el) el.value = '';
-    const modalEl = document.getElementById('deleteModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
-}
-
-// Attach delete buttons
-(function() {
-    const buttons = document.querySelectorAll('.btn-danger[data-section]');
-    if (!buttons) return;
-    buttons.forEach(function(btn) {
-        btn.onclick = function() { openDeleteModal(btn.getAttribute('data-section')); };
-    });
-})();
-
-// Delete form
-(function() {
-    const delForm = document.getElementById('deleteForm');
-    if (!delForm) return;
-    delForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const id = document.getElementById('deleteId').value;
-        fetch('/?c=Admin&a=get&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id))
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data && data.item) {
-                    var info = '';
-                    if (window.currentDeleteSection === 'bezci') info = data.item.meno + ' ' + data.item.priezvisko;
-                    else if (window.currentDeleteSection === 'roky') info = 'rok ' + data.item.rok;
-                    else if (window.currentDeleteSection === 'stanoviska') info = data.item.nazov;
-                    else if (window.currentDeleteSection === 'sponsors') info = data.item.name;
-
-                    if (confirm('Naozaj chcete vymazať záznam: ' + info + '?')) {
-                        fetch('/?c=Admin&a=delete&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id), { method: 'POST' })
-                            .then(function(res) { return res.json(); })
-                            .then(function(resp) {
-                                if (resp && resp.success) location.reload();
-                                else alert('Chyba: ' + (resp && resp.message ? resp.message : 'Neznáma chyba.'));
-                            }).catch(function() { alert('Chyba pri komunikácii so serverom.'); });
-                    }
-                } else {
-                    alert('Záznam s daným ID neexistuje.');
-                }
-            }).catch(function() { alert('Chyba pri načítaní údajov.'); });
-    });
-})();
-
-// Edit buttons
-(function() {
-    const editButtons = document.querySelectorAll('.btn-warning[data-section]');
-    if (!editButtons) return;
-    editButtons.forEach(function(btn) {
-        btn.onclick = function() {
-            window.currentEditSection = btn.getAttribute('data-section');
-            const el = document.getElementById('editId'); if (el) el.value = '';
-            const modalEl = document.getElementById('editIdModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
-        };
-    });
-})();
-
-// Edit ID form
-(function() {
-    const form = document.getElementById('editIdForm');
-    if (!form) return;
-    form.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const id = document.getElementById('editId').value;
-        fetch('/?c=Admin&a=get&section=' + encodeURIComponent(window.currentEditSection) + '&id=' + encodeURIComponent(id))
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data && data.item) {
-                    const section = window.currentEditSection;
-                    const fields = formFields[section] || [];
-                    let html = '';
-                    fields.forEach(function(field) {
-                        const value = data.item[field.name] || '';
-                        html += '<div class="mb-3">';
-                        html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
-                        if (field.type === 'select') {
-                            html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
-                            field.options.forEach(function(opt) { html += '<option value="' + opt + '"' + (opt === value ? ' selected' : '') + '>' + opt + '</option>'; });
-                            html += '</select>';
-                        } else if (field.type === 'textarea') {
-                            html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '>' + value + '</textarea>';
-                        } else if (field.type === 'file') {
-                            // file input - cannot set value programmatically; show existing filename if present
-                            html += '<input class="form-control" type="file" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
-                            if (data.item[field.name]) {
-                                html += '<div class="mt-1 small text-muted">Aktuálny súbor: ' + (data.item[field.name] || data.item['logo'] || '') + '</div>';
-                            } else if (data.item.logo && field.name === 'logo') {
-                                html += '<div class="mt-1 small text-muted">Aktuálny súbor: ' + (data.item.logo) + '</div>';
-                            }
-                        } else {
-                            html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '" value="' + value + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
-                        }
-                        html += '</div>';
-                    });
-                    const editBody = document.getElementById('editFormBody'); if (editBody) editBody.innerHTML = html;
-                    window.currentEditId = id;
-                    const modalEl = document.getElementById('editModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
-                } else {
-                    alert('Záznam s daným ID neexistuje.');
-                }
-            }).catch(function() { alert('Chyba pri načítaní údajov.'); });
-    });
-})();
-
-// Edit submit
-(function() {
-    const editForm = document.getElementById('editForm');
-    if (!editForm) return;
-    editForm.addEventListener('submit', function(e) {
-        e.preventDefault();
-        const fd = new FormData(editForm);
-        fd.append('id', window.currentEditId);
-        fetch('/?c=Admin&a=update&section=' + encodeURIComponent(window.currentEditSection), { method: 'POST', body: fd })
-            .then(function(res) { return res.json(); })
-            .then(function(data) {
-                if (data && data.success) location.reload();
-                else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
-            }).catch(function() { alert('Chyba pri ukladaní zmien.'); });
-    });
-})();
-
-// set/clear results year
-function setResultsYear(id) {
-    if (!confirm('Nastaviť rok s ID ' + id + ' ako výsledkový rok?')) return;
-    fetch('/?c=Admin&a=setResultsYear', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'id=' + encodeURIComponent(id)
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        if (data && data.success) location.reload();
-        else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
-    })
-    .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
-}
-
-function clearResultsYear() {
-    if (!confirm('Naozaj zrušiť vybraný výsledkový rok?')) return;
-    fetch('/?c=Admin&a=setResultsYear', {
-        method: 'POST',
-        headers: {'Content-Type': 'application/x-www-form-urlencoded'},
-        body: 'id='
-    })
-    .then(function(res) { return res.json(); })
-    .then(function(data) {
-        if (data && data.success) location.reload();
-        else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
-    })
-    .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
-}
-
-// Gallery helpers and uploads
-function openCreateAlbumModal() { const m = document.getElementById('createAlbumModal'); if (m) new bootstrap.Modal(m).show(); }
-function openUploadModal(albumId) { const sel = document.getElementById('uploadAlbumSelect'); if (sel && albumId) { for (let i=0;i<sel.options.length;i++){ if (sel.options[i].value===String(albumId)){ sel.selectedIndex=i; break; } } } const m = document.getElementById('uploadModal'); if (m) new bootstrap.Modal(m).show(); }
-
-(function attachCreateAlbum(){ const f = document.getElementById('createAlbumForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const fd = new FormData(f); fetch('/?c=Admin&a=createAlbum', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
-
-(function attachUploadForm(){ const f = document.getElementById('uploadForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const UPLOAD_MAX_BYTES = <?= (int)($upload_max_bytes ?? 0) ?>; const POST_MAX_BYTES = <?= (int)($post_max_bytes ?? 0) ?>; const input = document.getElementById('photosInput'); const files = input ? input.files : null; if (!files || files.length === 0) { alert('Vyberte aspoň jeden súbor.'); return; } let total = 0; for (let i=0;i<files.length;i++){ total += files[i].size; if (UPLOAD_MAX_BYTES > 0 && files[i].size > UPLOAD_MAX_BYTES){ alert('Súbor "' + files[i].name + '" je príliš veľký.'); return; } } if (POST_MAX_BYTES > 0 && total > POST_MAX_BYTES) { alert('Súhrnná veľkosť súborov je príliš veľká.'); return; } const fd = new FormData(f); fetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ alert('Nahrané ' + (data.files ? data.files.length : 0) + ' súborov.'); location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
-
-const ASSET_GALLERY = '<?= isset($link) ? $link->asset('images/gallery') : '/images/gallery' ?>';
-function openPhotosModal(albumId){ const body = document.getElementById('photosModalBody'); if (!body) return; body.innerHTML = '<p>Načítavam...</p>'; const modalEl = document.getElementById('photosModal'); if (modalEl) new bootstrap.Modal(modalEl).show(); fetch('/?c=Admin&a=listPhotos&album_id=' + encodeURIComponent(albumId)).then(function(res){ return res.json(); }).then(function(data){ if (!data || !data.success){ body.innerHTML = '<div class="alert alert-danger">Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba') + '</div>'; return; } const photos = data.photos || []; if (photos.length === 0){ body.innerHTML = '<p>Žiadne fotky v albume.</p>'; return; } let html = '<div class="d-flex flex-wrap gap-2">'; photos.forEach(function(p){ const src = ASSET_GALLERY + '/' + (p.album_id || albumId) + '/' + p.filename; html += '<div class="card" style="width:140px;"><img src="' + src + '" class="card-img-top" alt="' + (p.original_name || p.filename) + '" style="height:100px; object-fit:cover;" /><div class="card-body p-2"><div class="small text-truncate">' + (p.original_name || p.filename) + '</div><div class="d-flex mt-2"><a href="' + src + '" target="_blank" class="btn btn-sm btn-outline-primary me-1">Otvoriť</a><button class="btn btn-sm btn-danger ms-auto" onclick="deletePhotoConfirm(' + parseInt(p.ID_photo) + ')">Vymazať</button></div></div></div>'; }); html += '</div>'; body.innerHTML = html; }).catch(function(){ body.innerHTML = '<div class="alert alert-danger">Chyba pri načítaní fotiek.</div>'; }); }
-
-function deletePhotoConfirm(photoId){ if (!confirm('Naozaj vymazať túto fotku?')) return; fetch('/?c=Admin&a=delete&section=photos&id=' + encodeURIComponent(photoId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ const body = document.getElementById('photosModalBody'); const imgs = body ? body.querySelectorAll('img') : []; let albumId = null; if (imgs && imgs.length){ const parts = imgs[0].src.split('/'); albumId = parts[parts.length-2]; } if (albumId) openPhotosModal(albumId); else location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
-
-function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return; fetch('/?c=Admin&a=delete&section=albums&id=' + encodeURIComponent(albumId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
-
-// --- Admin map picker: when add/edit modal contains x_pos/y_pos fields, show a small map picker image that
-// lets admin click to select relative coordinates (0..1). The picker will fill inputs and show a small marker.
+// NOTE: this block was updated to include csrfFetch() wrapper which adds X-CSRF-Token header for POST requests
 (function(){
-    // use PHP asset helper so static analysis can resolve the file
-    const ADMIN_MAP_IMG = '<?= isset($link) ? $link->asset("images/mapa_MartinNEW.png") : "/images/mapa_MartinNEW.png" ?>';
-
-    // create picker HTML
-    function createPickerHtml() {
-        var html = '';
-        html += '<div class="admin-map-picker mt-3">';
-        html += '<div class="mb-2"><small class="text-muted">Vyberte pozíciu na mape (kliknutím) alebo zadajte čísla (0..1).</small></div>';
-        html += '<div style="position:relative; display:inline-block; max-width:100%;">';
-        html += '<img id="adminMapImg" src="' + ADMIN_MAP_IMG + '" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
-        html += '<div id="adminMapMarker" style="position:absolute;width:14px;height:14px;border-radius:7px;background:rgba(220,53,69,0.9);border:2px solid white;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>';
-        html += '</div>';
-        html += '<div class="mt-2"><button type="button" id="clearMapPos" class="btn btn-sm btn-outline-secondary">Vymazať pozíciu</button></div>';
-        html += '</div>';
-        return html;
-     }
-
-    // Install picker into modal when it opens
-    document.addEventListener('shown.bs.modal', function(ev){
-        try {
-            // target addModal or editModal
-            var modal = ev.target;
-            if (!modal) return;
-            // add modal body where dynamic fields are rendered
-            var body = modal.querySelector('#addFormBody') || modal.querySelector('#editFormBody');
-            if (!body) return;
-            // only for stanoviska
-            var xInput = body.querySelector('input[name="x_pos"]');
-            var yInput = body.querySelector('input[name="y_pos"]');
-            if (!xInput || !yInput) return;
-
-            // if picker already exists, do nothing
-            if (body.querySelector('.admin-map-picker')) return;
-
-            // inject picker
-            var wrapper = document.createElement('div');
-            wrapper.innerHTML = createPickerHtml();
-            body.appendChild(wrapper);
-
-            var img = body.querySelector('#adminMapImg');
-            var marker = body.querySelector('#adminMapMarker');
-            var clearBtn = body.querySelector('#clearMapPos');
-
-            function setMarkerRel(relX, relY) {
-                if (!img) return;
-                // position marker by percentages relative to image container
-                 marker.style.left = (relX * 100) + '%';
-                 marker.style.top = (relY * 100) + '%';
-                 marker.style.display = 'block';
-             }
-
-            img.addEventListener('click', function(e){
-                var rect = img.getBoundingClientRect();
-                var relX = (e.clientX - rect.left) / rect.width;
-                var relY = (e.clientY - rect.top) / rect.height;
-                relX = Math.min(Math.max(relX,0),1);
-                relY = Math.min(Math.max(relY,0),1);
-                // set inputs with 6 decimal places
-                xInput.value = relX.toFixed(6);
-                yInput.value = relY.toFixed(6);
-                setMarkerRel(relX, relY);
-            });
-
-            // if inputs already have values, show marker
-            if (xInput.value !== '' && yInput.value !== '') {
-                var vx = parseFloat(xInput.value);
-                var vy = parseFloat(yInput.value);
-                if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+    // helper that injects CSRF header for POST requests
+    function csrfFetch(url, options) {
+        options = options || {};
+        var method = (options.method || 'GET').toUpperCase();
+        options.headers = options.headers || {};
+        if (method === 'POST') {
+            // do not overwrite existing header if set
+            if (!options.headers['X-CSRF-Token'] && !options.headers['x-csrf-token']) {
+                options.headers['X-CSRF-Token'] = window.CSRF_TOKEN || '';
             }
-
-            clearBtn.addEventListener('click', function(){
-                xInput.value = '';
-                yInput.value = '';
-                marker.style.display = 'none';
-            });
-
-            // when inputs change manually, update marker
-            xInput.addEventListener('input', function(){
-                var vx = parseFloat(xInput.value);
-                var vy = parseFloat(yInput.value);
-                if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
-                else marker.style.display = 'none';
-            });
-            yInput.addEventListener('input', function(){
-                var vx = parseFloat(xInput.value);
-                var vy = parseFloat(yInput.value);
-                if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
-                else marker.style.display = 'none';
-            });
-
-            // handle modal hide: remove picker to avoid duplicates next time
-            modal.addEventListener('hidden.bs.modal', function(){
-                var p = body.querySelector('.admin-map-picker'); if (p) p.remove();
-            }, { once: true });
-
-        } catch (err) {
-            console.error('Map picker init error', err);
         }
-    });
+        return fetch(url, options);
+    }
+
+    const formFields = {
+        bezci: [
+            {name: 'meno', label: 'Meno', type: 'text', required: true},
+            {name: 'priezvisko', label: 'Priezvisko', type: 'text', required: true},
+            {name: 'email', label: 'Email', type: 'email', required: true},
+            {name: 'pohlavie', label: 'Pohlavie', type: 'select', options: ['M', 'Ž'], required: true},
+            {name: 'cas_dobehnutia', label: 'Čas dobehnutia', type: 'time', required: false, step: 1},
+            {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
+        ],
+        roky: [
+            {name: 'rok', label: 'Rok', type: 'number', required: true},
+            {name: 'datum_konania', label: 'Dátum konania', type: 'date', required: true},
+            {name: 'dlzka_behu', label: 'Dĺžka behu (km)', type: 'number', required: false, step: '0.01'},
+            {name: 'pocet_stanovisk', label: 'Počet stanovísk', type: 'number', required: false, step: '1'}
+        ],
+        stanoviska: [
+            {name: 'nazov', label: 'Názov', type: 'text', required: true},
+            {name: 'poloha', label: 'Poloha', type: 'text', required: false},
+            {name: 'popis', label: 'Popis', type: 'textarea', required: false},
+            {name: 'mapa_odkaz', label: 'Odkaz na mapu', type: 'text', required: false},
+            {name: 'obrazok_odkaz', label: 'Odkaz na obrázok', type: 'text', required: false},
+            {name: 'x_pos', label: 'X (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
+            {name: 'y_pos', label: 'Y (0..1) - pozícia na mape', type: 'number', required: false, step: '0.000001'},
+            {name: 'ID_roka', label: 'Rok konania', type: 'number', required: true}
+        ],
+        sponsors: [
+            {name: 'name', label: 'Názov', type: 'text', required: true},
+            {name: 'contact_email', label: 'Kontakt email', type: 'email', required: false},
+            {name: 'contact_phone', label: 'Kontakt telefón', type: 'text', required: false},
+            {name: 'url', label: 'URL (web)', type: 'text', required: false},
+            {name: 'logo', label: 'Logo (obrázok)', type: 'file', required: false}
+        ]
+    };
+
+    var currentSection = null;
+    var currentEditId = null;
+
+    function openAddModal(section) {
+        currentSection = section;
+        const fields = formFields[section] || [];
+        var html = '';
+        fields.forEach(function(field) {
+            html += '<div class="mb-3">';
+            html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
+            if (field.type === 'select') {
+                html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+                field.options.forEach(function(opt) { html += '<option value="' + opt + '">' + opt + '</option>'; });
+                html += '</select>';
+            } else if (field.type === 'textarea') {
+                html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '></textarea>';
+            } else {
+                html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
+            }
+            html += '</div>';
+        });
+
+        var addBody = document.getElementById('addFormBody');
+        if (addBody) addBody.innerHTML = html;
+        var modalEl = document.getElementById('addModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    // Add form submit
+    (function() {
+        const addForm = document.getElementById('addForm');
+        if (!addForm) return;
+        addForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fd = new FormData(addForm);
+            csrfFetch('/?c=Admin&a=add&section=' + encodeURIComponent(currentSection), { method: 'POST', body: fd })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.success) {
+                        location.reload();
+                    } else {
+                        alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+                    }
+                })
+                .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
+        });
+    })();
+
+    function openDeleteModal(section) {
+        window.currentDeleteSection = section;
+        const el = document.getElementById('deleteId'); if (el) el.value = '';
+        const modalEl = document.getElementById('deleteModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    // Attach delete buttons
+    (function() {
+        const buttons = document.querySelectorAll('.btn-danger[data-section]');
+        if (!buttons) return;
+        buttons.forEach(function(btn) {
+            btn.onclick = function() { openDeleteModal(btn.getAttribute('data-section')); };
+        });
+    })();
+
+    // Delete form
+    (function() {
+        const delForm = document.getElementById('deleteForm');
+        if (!delForm) return;
+        delForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('deleteId').value;
+            fetch('/?c=Admin&a=get&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id))
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.item) {
+                        var info = '';
+                        if (window.currentDeleteSection === 'bezci') info = data.item.meno + ' ' + data.item.priezvisko;
+                        else if (window.currentDeleteSection === 'roky') info = 'rok ' + data.item.rok;
+                        else if (window.currentDeleteSection === 'stanoviska') info = data.item.nazov;
+                        else if (window.currentDeleteSection === 'sponsors') info = data.item.name;
+
+                        if (confirm('Naozaj chcete vymazať záznam: ' + info + '?')) {
+                            csrfFetch('/?c=Admin&a=delete&section=' + encodeURIComponent(window.currentDeleteSection) + '&id=' + encodeURIComponent(id), { method: 'POST' })
+                                .then(function(res) { return res.json(); })
+                                .then(function(resp) {
+                                    if (resp && resp.success) location.reload();
+                                    else alert('Chyba: ' + (resp && resp.message ? resp.message : 'Neznáma chyba.'));
+                                }).catch(function() { alert('Chyba pri komunikácii so serverom.'); });
+                        }
+                    } else {
+                        alert('Záznam s daným ID neexistuje.');
+                    }
+                }).catch(function() { alert('Chyba pri načítaní údajov.'); });
+        });
+    })();
+
+    // Edit buttons
+    (function() {
+        const editButtons = document.querySelectorAll('.btn-warning[data-section]');
+        if (!editButtons) return;
+        editButtons.forEach(function(btn) {
+            btn.onclick = function() {
+                window.currentEditSection = btn.getAttribute('data-section');
+                const el = document.getElementById('editId'); if (el) el.value = '';
+                const modalEl = document.getElementById('editIdModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
+            };
+        });
+    })();
+
+    // Edit ID form
+    (function() {
+        const form = document.getElementById('editIdForm');
+        if (!form) return;
+        form.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const id = document.getElementById('editId').value;
+            fetch('/?c=Admin&a=get&section=' + encodeURIComponent(window.currentEditSection) + '&id=' + encodeURIComponent(id))
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.item) {
+                        const section = window.currentEditSection;
+                        const fields = formFields[section] || [];
+                        let html = '';
+                        fields.forEach(function(field) {
+                            const value = data.item[field.name] || '';
+                            html += '<div class="mb-3">';
+                            html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
+                            if (field.type === 'select') {
+                                html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+                                field.options.forEach(function(opt) { html += '<option value="' + opt + '"' + (opt === value ? ' selected' : '') + '>' + opt + '</option>'; });
+                                html += '</select>';
+                            } else if (field.type === 'textarea') {
+                                html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '>' + value + '</textarea>';
+                            } else if (field.type === 'file') {
+                                html += '<input class="form-control" type="file" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+                                if (data.item[field.name]) {
+                                    html += '<div class="mt-1 small text-muted">Aktuálny súbor: ' + (data.item[field.name] || data.item['logo'] || '') + '</div>';
+                                } else if (data.item.logo && field.name === 'logo') {
+                                    html += '<div class="mt-1 small text-muted">Aktuálny súbor: ' + (data.item.logo) + '</div>';
+                                }
+                            } else {
+                                html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '" value="' + value + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
+                            }
+                            html += '</div>';
+                        });
+                        const editBody = document.getElementById('editFormBody'); if (editBody) editBody.innerHTML = html;
+                        window.currentEditId = id;
+                        const modalEl = document.getElementById('editModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
+                    } else {
+                        alert('Záznam s daným ID neexistuje.');
+                    }
+                }).catch(function() { alert('Chyba pri načítaní údajov.'); });
+        });
+    })();
+
+    // Edit submit
+    (function() {
+        const editForm = document.getElementById('editForm');
+        if (!editForm) return;
+        editForm.addEventListener('submit', function(e) {
+            e.preventDefault();
+            const fd = new FormData(editForm);
+            fd.append('id', window.currentEditId);
+            csrfFetch('/?c=Admin&a=update&section=' + encodeURIComponent(window.currentEditSection), { method: 'POST', body: fd })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data && data.success) location.reload();
+                    else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+                }).catch(function() { alert('Chyba pri ukladaní zmien.'); });
+        });
+    })();
+
+    // set/clear results year
+    function setResultsYear(id) {
+        if (!confirm('Nastaviť rok s ID ' + id + ' ako výsledkový rok?')) return;
+        csrfFetch('/?c=Admin&a=setResultsYear', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'id=' + encodeURIComponent(id)
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.success) location.reload();
+            else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+        })
+        .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
+    }
+
+    function clearResultsYear() {
+        if (!confirm('Naozaj zrušiť vybraný výsledkový rok?')) return;
+        csrfFetch('/?c=Admin&a=setResultsYear', {
+            method: 'POST',
+            headers: {'Content-Type': 'application/x-www-form-urlencoded'},
+            body: 'id='
+        })
+        .then(function(res) { return res.json(); })
+        .then(function(data) {
+            if (data && data.success) location.reload();
+            else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
+        })
+        .catch(function() { alert('Chyba pri komunikácii so serverom.'); });
+    }
+
+    // Gallery helpers and uploads
+    function openCreateAlbumModal() { const m = document.getElementById('createAlbumModal'); if (m) new bootstrap.Modal(m).show(); }
+    function openUploadModal(albumId) { const sel = document.getElementById('uploadAlbumSelect'); if (sel && albumId) { for (let i=0;i<sel.options.length;i++){ if (sel.options[i].value===String(albumId)){ sel.selectedIndex=i; break; } } } const m = document.getElementById('uploadModal'); if (m) new bootstrap.Modal(m).show(); }
+
+    (function attachCreateAlbum(){ const f = document.getElementById('createAlbumForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const fd = new FormData(f); csrfFetch('/?c=Admin&a=createAlbum', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
+
+    (function attachUploadForm(){ const f = document.getElementById('uploadForm'); if (!f) return; f.addEventListener('submit', function(e){ e.preventDefault(); const UPLOAD_MAX_BYTES = <?= (int)($upload_max_bytes ?? 0) ?>; const POST_MAX_BYTES = <?= (int)($post_max_bytes ?? 0) ?>; const input = document.getElementById('photosInput'); const files = input ? input.files : null; if (!files || files.length === 0) { alert('Vyberte aspoň jeden súbor.'); return; } let total = 0; for (let i=0;i<files.length;i++){ total += files[i].size; if (UPLOAD_MAX_BYTES > 0 && files[i].size > UPLOAD_MAX_BYTES){ alert('Súbor "' + files[i].name + '" je príliš veľký.'); return; } } if (POST_MAX_BYTES > 0 && total > POST_MAX_BYTES) { alert('Súhrnná veľkosť súborov je príliš veľká.'); return; } const fd = new FormData(f); csrfFetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ alert('Nahrané ' + (data.files ? data.files.length : 0) + ' súborov.'); location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }); })();
+
+    const ASSET_GALLERY = '<?= isset($link) ? $link->asset('images/gallery') : '/images/gallery' ?>';
+    function openPhotosModal(albumId){ const body = document.getElementById('photosModalBody'); if (!body) return; body.innerHTML = '<p>Načítavam...</p>'; const modalEl = document.getElementById('photosModal'); if (modalEl) new bootstrap.Modal(modalEl).show(); fetch('/?c=Admin&a=listPhotos&album_id=' + encodeURIComponent(albumId)).then(function(res){ return res.json(); }).then(function(data){ if (!data || !data.success){ body.innerHTML = '<div class="alert alert-danger">Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba') + '</div>'; return; } const photos = data.photos || []; if (photos.length === 0){ body.innerHTML = '<p>Žiadne fotky v albume.</p>'; return; } let html = '<div class="d-flex flex-wrap gap-2">'; photos.forEach(function(p){ const src = ASSET_GALLERY + '/' + (p.album_id || albumId) + '/' + p.filename; html += '<div class="card" style="width:140px;"><img src="' + src + '" class="card-img-top" alt="' + (p.original_name || p.filename) + '" style="height:100px; object-fit:cover;" /><div class="card-body p-2"><div class="small text-truncate">' + (p.original_name || p.filename) + '</div><div class="d-flex mt-2"><a href="' + src + '" target="_blank" class="btn btn-sm btn-outline-primary me-1">Otvoriť</a><button class="btn btn-sm btn-danger ms-auto" onclick="deletePhotoConfirm(' + parseInt(p.ID_photo) + ')">Vymazať</button></div></div></div>'; }); html += '</div>'; body.innerHTML = html; }).catch(function(){ body.innerHTML = '<div class="alert alert-danger">Chyba pri načítaní fotiek.</div>'; }); }
+
+    function deletePhotoConfirm(photoId){ if (!confirm('Naozaj vymazať túto fotku?')) return; csrfFetch('/?c=Admin&a=delete&section=photos&id=' + encodeURIComponent(photoId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success){ const body = document.getElementById('photosModalBody'); const imgs = body ? body.querySelectorAll('img') : []; let albumId = null; if (imgs && imgs.length){ const parts = imgs[0].src.split('/'); albumId = parts[parts.length-2]; } if (albumId) openPhotosModal(albumId); else location.reload(); } else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
+
+    function deleteAlbumConfirm(albumId){ if (!confirm('Naozaj vymazať celý album a všetky jeho fotky?')) return; csrfFetch('/?c=Admin&a=delete&section=albums&id=' + encodeURIComponent(albumId), { method: 'POST' }).then(function(res){ return res.json(); }).then(function(data){ if (data && data.success) location.reload(); else alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.')); }).catch(function(){ alert('Chyba pri komunikácii so serverom.'); }); }
+
+    // --- Admin map picker: when add/edit modal contains x_pos/y_pos fields, show a small map picker image that
+    // lets admin click to select relative coordinates (0..1). The picker will fill inputs and show a small marker.
+    (function(){
+        // use PHP asset helper so static analysis can resolve the file
+        const ADMIN_MAP_IMG = '<?= isset($link) ? $link->asset("images/mapa_MartinNEW.png") : "/images/mapa_MartinNEW.png" ?>';
+
+        // create picker HTML
+        function createPickerHtml() {
+            var html = '';
+            html += '<div class="admin-map-picker mt-3">';
+            html += '<div class="mb-2"><small class="text-muted">Vyberte pozíciu na mape (kliknutím) alebo zadajte čísla (0..1).</small></div>';
+            html += '<div style="position:relative; display:inline-block; max-width:100%;">';
+            html += '<img id="adminMapImg" src="' + ADMIN_MAP_IMG + '" alt="mapa" style="max-width:100%; height:auto; display:block; border:1px solid #ddd;" />';
+            html += '<div id="adminMapMarker" style="position:absolute;width:14px;height:14px;border-radius:7px;background:rgba(220,53,69,0.9);border:2px solid white;transform:translate(-50%,-50%);display:none;pointer-events:none;"></div>';
+            html += '</div>';
+            html += '<div class="mt-2"><button type="button" id="clearMapPos" class="btn btn-sm btn-outline-secondary">Vymazať pozíciu</button></div>';
+            html += '</div>';
+            return html;
+         }
+
+        // Install picker into modal when it opens
+        document.addEventListener('shown.bs.modal', function(ev){
+            try {
+                // target addModal or editModal
+                var modal = ev.target;
+                if (!modal) return;
+                // add modal body where dynamic fields are rendered
+                var body = modal.querySelector('#addFormBody') || modal.querySelector('#editFormBody');
+                if (!body) return;
+                // only for stanoviska
+                var xInput = body.querySelector('input[name="x_pos"]');
+                var yInput = body.querySelector('input[name="y_pos"]');
+                if (!xInput || !yInput) return;
+
+                // if picker already exists, do nothing
+                if (body.querySelector('.admin-map-picker')) return;
+
+                // inject picker
+                var wrapper = document.createElement('div');
+                wrapper.innerHTML = createPickerHtml();
+                body.appendChild(wrapper);
+
+                var img = body.querySelector('#adminMapImg');
+                var marker = body.querySelector('#adminMapMarker');
+                var clearBtn = body.querySelector('#clearMapPos');
+
+                function setMarkerRel(relX, relY) {
+                    if (!img) return;
+                    // position marker by percentages relative to image container
+                     marker.style.left = (relX * 100) + '%';
+                     marker.style.top = (relY * 100) + '%';
+                     marker.style.display = 'block';
+                 }
+
+                img.addEventListener('click', function(e){
+                    var rect = img.getBoundingClientRect();
+                    var relX = (e.clientX - rect.left) / rect.width;
+                    var relY = (e.clientY - rect.top) / rect.height;
+                    relX = Math.min(Math.max(relX,0),1);
+                    relY = Math.min(Math.max(relY,0),1);
+                    // set inputs with 6 decimal places
+                    xInput.value = relX.toFixed(6);
+                    yInput.value = relY.toFixed(6);
+                    setMarkerRel(relX, relY);
+                });
+
+                // if inputs already have values, show marker
+                if (xInput.value !== '' && yInput.value !== '') {
+                    var vx = parseFloat(xInput.value);
+                    var vy = parseFloat(yInput.value);
+                    if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+                }
+
+                clearBtn.addEventListener('click', function(){
+                    xInput.value = '';
+                    yInput.value = '';
+                    marker.style.display = 'none';
+                });
+
+                // when inputs change manually, update marker
+                xInput.addEventListener('input', function(){
+                    var vx = parseFloat(xInput.value);
+                    var vy = parseFloat(yInput.value);
+                    if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+                    else marker.style.display = 'none';
+                });
+                yInput.addEventListener('input', function(){
+                    var vx = parseFloat(xInput.value);
+                    var vy = parseFloat(yInput.value);
+                    if (isFinite(vx) && isFinite(vy)) setMarkerRel(vx, vy);
+                    else marker.style.display = 'none';
+                });
+
+                // handle modal hide: remove picker to avoid duplicates next time
+                modal.addEventListener('hidden.bs.modal', function(){
+                    var p = body.querySelector('.admin-map-picker'); if (p) p.remove();
+                }, { once: true });
+
+            } catch (err) {
+                console.error('Map picker init error', err);
+            }
+        });
+    })();
+
 })();
 </script>

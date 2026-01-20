@@ -20,6 +20,8 @@ $view->setLayout('auth');
                     <?php endif; ?>
 
                     <form class="form-signin" method="post" action="<?= $link->url('auth.registerUser') ?>">
+                        <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
+
                         <div class="form-label-group mb-3">
                             <label for="firstName" class="form-label">Meno</label>
                             <input name="firstName" type="text" id="firstName" class="form-control" placeholder="Meno" required>

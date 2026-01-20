@@ -128,4 +128,34 @@ class Session
         }
         return session_destroy();
     }
+
+    // --- CSRF helpers --------------------------------------------------
+    /**
+     * Return CSRF token; generate and store one if missing.
+     */
+    public function getCsrfToken(): string
+    {
+        if (empty($this->sessionData['_csrf_token'])) {
+            try {
+                $token = bin2hex(random_bytes(32));
+            } catch (\Throwable $e) {
+                // fallback to less-strong token if random_bytes unavailable
+                $token = bin2hex(openssl_random_pseudo_bytes(32));
+            }
+            $this->sessionData['_csrf_token'] = $token;
+        }
+        return (string) $this->sessionData['_csrf_token'];
+    }
+
+    /**
+     * Validate provided CSRF token against the stored session token.
+     */
+    public function validateCsrfToken(?string $token): bool
+    {
+        if (empty($token)) return false;
+        $stored = $this->sessionData['_csrf_token'] ?? null;
+        if (empty($stored)) return false;
+        // Use hash_equals to mitigate timing attacks
+        return function_exists('hash_equals') ? hash_equals($stored, $token) : ($stored === $token);
+    }
 }

@@ -112,40 +112,54 @@ class HomeController extends BaseController
         $success = null;
         $error = null;
         if ($request->isPost()) {
-            $meno = $request->post('meno');
-            $priezvisko = $request->post('priezvisko');
-            $email = $request->post('email');
-            $pohlavie = $request->post('pohlavie');
+            // Trim and read inputs
+            $meno = trim((string)$request->post('meno'));
+            $priezvisko = trim((string)$request->post('priezvisko'));
+            $email = trim((string)$request->post('email'));
+            $pohlavie = trim((string)$request->post('pohlavie'));
             $rok = date('Y');
-            if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
+
+            // Server-side validation: required fields
+            if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '') {
+                $error = 'Všetky polia sú povinné.';
+            } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = 'Zadaný email nemá správny formát.';
             } else {
-                try {
-                    $conn = \Framework\DB\Connection::getInstance();
-                    // Zisti ID_roka pre aktuálny rok
-                    $stmt = $conn->prepare('SELECT ID_roka FROM rokKonania WHERE rok = ? LIMIT 1');
-                    $stmt->execute([$rok]);
-                    $row = $stmt->fetch();
-                    if ($row) {
-                        $id_roka = $row['ID_roka'];
-                    } else {
-                        // Ak neexistuje, vytvor nový záznam
-                        $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov, pocet_stanovisk) VALUES (?, ?, 0, 0)');
-                        $stmt->execute([$rok, date('Y-m-d')]);
-                        $id_roka = $conn->lastInsertId();
+                // Normalize pohlavie and allow only expected values (M / Ž)
+                $pohlUp = mb_strtoupper($pohlavie, 'UTF-8');
+                if (!in_array($pohlUp, ['M', 'Ž'], true)) {
+                    $error = 'Neplatná hodnota pre pohlavie.';
+                } else {
+                    // Use canonical single-char values stored in DB (M or ž)
+                    $pohlavieStored = ($pohlUp === 'M') ? 'M' : 'Ž';
+
+                    try {
+                        $conn = \Framework\DB\Connection::getInstance();
+                        // Zisti ID_roka pre aktuálny rok
+                        $stmt = $conn->prepare('SELECT ID_roka FROM rokKonania WHERE rok = ? LIMIT 1');
+                        $stmt->execute([$rok]);
+                        $row = $stmt->fetch();
+                        if ($row) {
+                            $id_roka = $row['ID_roka'];
+                        } else {
+                            // Ak neexistuje, vytvor nový záznam
+                            $stmt = $conn->prepare('INSERT INTO rokKonania (rok, datum_konania, pocet_ucastnikov, pocet_stanovisk) VALUES (?, ?, 0, 0)');
+                            $stmt->execute([$rok, date('Y-m-d')]);
+                            $id_roka = $conn->lastInsertId();
+                        }
+                        // Uloz bezca - prepared statement
+                        $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
+                        $stmt->execute([$meno, $priezvisko, $email, $pohlavieStored, $id_roka]);
+                        // Aktualizuj pocet_ucastnikov v rokKonania
+                        $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
+                        $stmt->execute([$id_roka]);
+                        $pocet = $stmt->fetch()['pocet'];
+                        $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
+                        $stmt->execute([$pocet, $id_roka]);
+                        $success = 'Registrácia prebehla úspešne!';
+                    } catch (\Exception $e) {
+                        $error = 'Chyba pri registrácii: ' . $e->getMessage();
                     }
-                    // Ulož bežca
-                    $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
-                    $stmt->execute([$meno, $priezvisko, $email, $pohlavie, $id_roka]);
-                    // Aktualizuj pocet_ucastnikov v rokKonania
-                    $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
-                    $stmt->execute([$id_roka]);
-                    $pocet = $stmt->fetch()['pocet'];
-                    $stmt = $conn->prepare('UPDATE rokKonania SET pocet_ucastnikov = ? WHERE ID_roka = ?');
-                    $stmt->execute([$pocet, $id_roka]);
-                    $success = 'Registrácia prebehla úspešne!';
-                } catch (\Exception $e) {
-                    $error = 'Chyba pri registrácii: ' . $e->getMessage();
                 }
             }
         }
