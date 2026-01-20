@@ -42,9 +42,9 @@ class AdminController extends BaseController
     public function index(Request $request): Response
     {
         $conn = Connection::getInstance();
-        $bezci = $conn->query('SELECT * FROM Bezec')->fetchAll();
-        $roky = $conn->query('SELECT * FROM rokKonania')->fetchAll();
-        $stanoviska = $conn->query('SELECT * FROM Stanovisko')->fetchAll();
+        $bezci = $conn->query('SELECT * FROM Bezec')->fetchAll(\PDO::FETCH_ASSOC);
+        $roky = $conn->query('SELECT * FROM rokKonania')->fetchAll(\PDO::FETCH_ASSOC);
+        $stanoviska = $conn->query('SELECT * FROM Stanovisko')->fetchAll(\PDO::FETCH_ASSOC);
 
         // Try to load currently selected year for results from settings table (if exists)
         $currentResultsYear = null;
@@ -71,7 +71,7 @@ class AdminController extends BaseController
             $stmt = $conn->query("SHOW TABLES LIKE 'albums'");
             $albumsTableExists = $stmt->fetchColumn() !== false;
             if ($albumsTableExists) {
-                $albums = $conn->query('SELECT * FROM albums ORDER BY created_at DESC')->fetchAll();
+                $albums = $conn->query('SELECT * FROM albums ORDER BY created_at DESC')->fetchAll(\PDO::FETCH_ASSOC);
             }
         } catch (\Throwable $e) {
             $albums = [];
@@ -83,7 +83,7 @@ class AdminController extends BaseController
             $stmt = $conn->query("SHOW TABLES LIKE 'sponsors'");
             $sponsorsTableExists = $stmt->fetchColumn() !== false;
             if ($sponsorsTableExists) {
-                $sponsors = $conn->query('SELECT * FROM sponsors ORDER BY created_at DESC')->fetchAll();
+                $sponsors = $conn->query('SELECT * FROM sponsors ORDER BY created_at DESC')->fetchAll(\PDO::FETCH_ASSOC);
             }
         } catch (\Throwable $e) {
             $sponsors = [];
@@ -96,7 +96,7 @@ class AdminController extends BaseController
             $usersTableExists = $stmt->fetchColumn() !== false;
             if ($usersTableExists) {
                 // select commonly useful fields (do not include password hash)
-                $pouzivatelia = $conn->query('SELECT ID_pouzivatela, meno, priezvisko, email, admin, zabehnute_kilometre, vypite_piva FROM Pouzivatelia ORDER BY ID_pouzivatela ASC')->fetchAll();
+                $pouzivatelia = $conn->query('SELECT ID_pouzivatela, meno, priezvisko, email, admin, zabehnute_kilometre, vypite_piva FROM Pouzivatelia ORDER BY ID_pouzivatela ASC')->fetchAll(\PDO::FETCH_ASSOC);
             }
         } catch (\Throwable $e) {
             $pouzivatelia = [];
@@ -1031,6 +1031,42 @@ class AdminController extends BaseController
             $stmt->execute([(int)$albumId]);
             $photos = $stmt->fetchAll();
             return $this->json(['success' => true, 'photos' => $photos]);
+        } catch (\Throwable $e) {
+            return $this->json(['success' => false, 'message' => $e->getMessage()]);
+        }
+    }
+
+    /**
+     * AJAX: list (filterable) bezci records
+     * Accepts optional GET params: ID_roka (int) and pohlavie (M/Z)
+     */
+    public function listBezci(Request $request): Response
+    {
+        $conn = Connection::getInstance();
+        $idRoka = $_GET['ID_roka'] ?? null;
+        $pohlavie = $_GET['pohlavie'] ?? null;
+
+        try {
+            $sql = 'SELECT * FROM Bezec WHERE 1=1';
+            $params = [];
+            if ($idRoka !== null && $this->isValidId($idRoka)) {
+                $sql .= ' AND ID_roka = ?';
+                $params[] = (int)$idRoka;
+            }
+            if ($pohlavie !== null && $pohlavie !== '') {
+                $p = strtoupper(trim($pohlavie));
+                if (preg_match('/^[MZ]$/', $p)) {
+                    $sql .= ' AND UPPER(pohlavie) = ?';
+                    $params[] = $p;
+                }
+            }
+            $sql .= ' ORDER BY ID_bezca ASC';
+            $stmt = $conn->prepare($sql);
+            $stmt->execute($params);
+            // fetch as associative arrays only to avoid duplicated numeric indexes (PDO::FETCH_BOTH yields numeric+assoc keys)
+            $rows = $stmt->fetchAll(\PDO::FETCH_ASSOC);
+
+            return $this->json(['success' => true, 'items' => $rows]);
         } catch (\Throwable $e) {
             return $this->json(['success' => false, 'message' => $e->getMessage()]);
         }

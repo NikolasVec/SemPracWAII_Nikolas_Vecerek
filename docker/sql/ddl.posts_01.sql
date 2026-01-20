@@ -200,3 +200,5 @@ WHERE rk.ID_roka IN (SELECT DISTINCT ID_roka FROM Bezec);
 -- Ensure empty-string coordinates are normalized to NULL
 UPDATE `Stanovisko` SET x_pos = NULL WHERE x_pos = '';
 UPDATE `Stanovisko` SET y_pos = NULL WHERE y_pos = '';
+
+

@@ -20,37 +20,35 @@
 
             <div class="admin-section" data-section="bezci">
             <h3>Bežci</h3>
+
+            <!-- Filters: year and gender -->
+            <div class="mb-3 d-flex gap-2 align-items-center" id="bezciFilters">
+                <div>
+                    <label for="bezciYearFilter" class="form-label mb-0 small">Rok</label>
+                    <select id="bezciYearFilter" class="form-select form-select-sm">
+                        <option value="">Všetky roky</option>
+                        <?php if (!empty($roky)): foreach ($roky as $r): ?>
+                            <option value="<?= htmlspecialchars((string)($r['ID_roka'] ?? '')) ?>"><?= htmlspecialchars((string)($r['rok'] ?? ($r['ID_roka'] ?? ''))) ?></option>
+                        <?php endforeach; endif; ?>
+                    </select>
+                </div>
+                <div>
+                    <label for="bezciGenderFilter" class="form-label mb-0 small">Pohlavie</label>
+                    <select id="bezciGenderFilter" class="form-select form-select-sm">
+                        <option value="">Všetky</option>
+                        <option value="M">M</option>
+                        <option value="Z">Ž</option>
+                    </select>
+                </div>
+                <div class="align-self-end">
+                    <button id="bezciFilterReset" type="button" class="btn btn-sm btn-outline-secondary">Reset</button>
+                </div>
+                <div class="ms-auto small text-muted align-self-end" id="bezciFilterStatus" aria-live="polite"></div>
+            </div>
+
+            <!-- Replace server-rendered table with JS-driven container to avoid duplicates -->
             <div class="table-scroll-wrapper">
-            <table class="table table-bordered table-striped">
-                <thead>
-                <tr>
-                    <?php
-                    if (!empty($bezci)) {
-                        $cols = array_filter(array_keys($bezci[0]), 'is_string');
-                        foreach($cols as $col): ?>
-                            <th><?= htmlspecialchars((string)$col) ?></th>
-                        <?php endforeach;
-                        // actions header
-                        ?>
-                        <th>Akcie</th>
-                    <?php }
-                    ?>
-                </tr>
-                </thead>
-                <tbody>
-                <?php foreach ($bezci as $bezc): ?>
-                    <tr>
-                        <?php foreach ($cols as $col): ?>
-                            <td><?= htmlspecialchars((string)($bezc[$col] ?? '')) ?></td>
-                        <?php endforeach; ?>
-                        <td>
-                            <button class="btn btn-sm btn-warning me-1" onclick="window.currentEditSection='bezci'; document.getElementById('editId').value=<?= htmlspecialchars((string)($bezc['ID_bezca'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('editIdModal')).show();">Upraviť</button>
-                            <button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection='bezci'; document.getElementById('deleteId').value=<?= htmlspecialchars((string)($bezc['ID_bezca'] ?? '')) ?>; new bootstrap.Modal(document.getElementById('deleteModal')).show();">Vymazať</button>
-                        </td>
-                    </tr>
-                <?php endforeach; ?>
-                </tbody>
-            </table>
+                <div id="bezciTableContainer"></div>
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('bezci')">Pridať</button>
@@ -313,7 +311,7 @@
         <h5 class="modal-title" id="addModalLabel">Pridať záznam</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form id="addForm">
+      <form id="addForm" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body" id="addFormBody">
           <!-- Dynamicky generované polia -->
@@ -381,7 +379,7 @@
         <h5 class="modal-title" id="editModalLabel">Upraviť záznam</h5>
         <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
       </div>
-      <form id="editForm">
+      <form id="editForm" enctype="multipart/form-data">
         <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
         <div class="modal-body" id="editFormBody">
           <!-- Dynamicky generované polia -->
@@ -588,7 +586,7 @@
     function openAddModal(section) {
         currentSection = section;
         const fields = formFields[section] || [];
-        var html = '';
+        let html = '';
         fields.forEach(function(field) {
             html += '<div class="mb-3">';
             html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
@@ -604,9 +602,40 @@
             html += '</div>';
         });
 
-        var addBody = document.getElementById('addFormBody');
+        const addBody = document.getElementById('addFormBody');
         if (addBody) addBody.innerHTML = html;
-        var modalEl = document.getElementById('addModal');
+        const modalEl = document.getElementById('addModal');
+        if (modalEl) new bootstrap.Modal(modalEl).show();
+    }
+
+    // expose openAddModal to global scope so inline onclicks work
+    window.openAddModal = openAddModal;
+
+    var currentSection = null;
+    var currentEditId = null;
+
+    function openAddModal(section) {
+        currentSection = section;
+        const fields = formFields[section] || [];
+        let html = '';
+        fields.forEach(function(field) {
+            html += '<div class="mb-3">';
+            html += '<label class="form-label">' + field.label + (field.required ? ' *' : '') + '</label>';
+            if (field.type === 'select') {
+                html += '<select class="form-select" name="' + field.name + '"' + (field.required ? ' required' : '') + '>';
+                field.options.forEach(function(opt) { html += '<option value="' + opt + '">' + opt + '</option>'; });
+                html += '</select>';
+            } else if (field.type === 'textarea') {
+                html += '<textarea class="form-control" name="' + field.name + '"' + (field.required ? ' required' : '') + '></textarea>';
+            } else {
+                html += '<input class="form-control" type="' + field.type + '" name="' + field.name + '"' + (field.required ? ' required' : '') + (field.step ? ' step="' + field.step + '"' : '') + '>';
+            }
+            html += '</div>';
+        });
+
+        const addBody = document.getElementById('addFormBody');
+        if (addBody) addBody.innerHTML = html;
+        const modalEl = document.getElementById('addModal');
         if (modalEl) new bootstrap.Modal(modalEl).show();
     }
 
@@ -753,4 +782,115 @@
                 }).catch(function() { alert('Chyba pri ukladaní zmien.'); });
         });
     })();
+
+    // --- Bezci AJAX filtering (fetch listBezci and re-render table) ---
+    (function(){
+        const yearSel = document.getElementById('bezciYearFilter');
+        const genderSel = document.getElementById('bezciGenderFilter');
+        const resetBtn = document.getElementById('bezciFilterReset');
+        const statusEl = document.getElementById('bezciFilterStatus');
+        const container = document.getElementById('bezciTableContainer');
+
+        function getOrCreateTable() {
+            if (!container) return null;
+            // remove any stray tables with same id elsewhere to avoid duplicates
+            document.querySelectorAll('#bezciTable').forEach(function(el){
+                // if it's already inside our container keep it, otherwise remove
+                if (!container.contains(el)) {
+                    el.parentNode && el.parentNode.removeChild(el);
+                }
+            });
+
+            let table = container.querySelector('table#bezciTable');
+            if (!table) {
+                table = document.createElement('table');
+                table.className = 'table table-bordered table-striped';
+                table.id = 'bezciTable';
+                const thead = document.createElement('thead');
+                const tbody = document.createElement('tbody');
+                table.appendChild(thead);
+                table.appendChild(tbody);
+                // clear container to avoid duplicate static markup
+                container.innerHTML = '';
+                container.appendChild(table);
+            }
+            return table;
+        }
+
+        function buildHeaderFromItem(item) {
+            const table = getOrCreateTable(); if (!table) return [];
+            const thead = table.querySelector('thead');
+            const tr = document.createElement('tr');
+            // filter out numeric keys (e.g. "0","1",...) which come from numeric indexes in fetched rows
+            const keys = Object.keys(item || {}).filter(function(k){ return !/^\d+$/.test(k); });
+            keys.forEach(function(k){
+                const th = document.createElement('th'); th.textContent = k; tr.appendChild(th);
+            });
+            const thActions = document.createElement('th'); thActions.textContent = 'Akcie'; tr.appendChild(thActions);
+            thead.innerHTML = ''; thead.appendChild(tr);
+            return keys;
+        }
+
+        function renderRows(items, keys){
+            const table = getOrCreateTable(); if (!table) return;
+            const tbody = table.querySelector('tbody');
+            tbody.innerHTML = '';
+            if (!items || items.length === 0) {
+                const tr = document.createElement('tr');
+                const td = document.createElement('td'); td.colSpan = (keys ? keys.length + 1 : 1); td.textContent = 'Žiadni bežci'; tr.appendChild(td); tbody.appendChild(tr); return;
+            }
+            items.forEach(function(it){
+                const tr = document.createElement('tr');
+                (keys || Object.keys(it)).forEach(function(k){
+                    const td = document.createElement('td'); td.textContent = typeof it[k] !== 'undefined' && it[k] !== null ? it[k] : ''; tr.appendChild(td);
+                });
+                // actions
+                const tdAct = document.createElement('td');
+                const idVal = (typeof it.ID_bezca !== 'undefined' ? it.ID_bezca : (it.id || ''));
+                tdAct.innerHTML = '<button class="btn btn-sm btn-warning me-1" onclick="window.currentEditSection=\'bezci\'; document.getElementById(\'editId\').value='+ (idVal)+'; new bootstrap.Modal(document.getElementById(\'editIdModal\')).show();">Upraviť</button>' +
+                                 '<button class="btn btn-sm btn-danger" onclick="window.currentDeleteSection=\'bezci\'; document.getElementById(\'deleteId\').value='+ (idVal)+'; new bootstrap.Modal(document.getElementById(\'deleteModal\')).show();">Vymazať</button>';
+                tr.appendChild(tdAct);
+                tbody.appendChild(tr);
+            });
+        }
+
+        function fetchAndRender() {
+            const year = yearSel ? yearSel.value : '';
+            const gender = genderSel ? genderSel.value : '';
+            statusEl && (statusEl.textContent = 'Načítavam...');
+            const params = new URLSearchParams();
+            if (year) params.set('ID_roka', year);
+            if (gender) params.set('pohlavie', gender);
+            const url = '/?c=Admin&a=listBezci' + (params.toString() ? '&' + params.toString() : '');
+            fetch(url, { credentials: 'same-origin' })
+                .then(function(res){ return res.json(); })
+                .then(function(data){
+                    statusEl && (statusEl.textContent = 'Zobrazených: ' + (data.items ? data.items.length : 0));
+                    if (!data || !data.success) { renderRows([], null); return; }
+                    const items = data.items || [];
+                    let keys = null;
+                    if (items.length > 0) {
+                        const first = items[0];
+                        // remove numeric keys to avoid duplicated columns (numeric indexes from DB fetch)
+                        keys = Object.keys(first).filter(function(k){ return typeof k === 'string' && !/^\d+$/.test(k); });
+                        buildHeaderFromItem(first);
+                    } else {
+                        // keep existing header if present
+                        const table = getOrCreateTable();
+                        const existingKeys = table ? Array.from(table.querySelectorAll('thead th')).map(function(th){ return th.textContent; }).filter(function(t){ return t !== 'Akcie'; }) : [];
+                        keys = existingKeys;
+                    }
+                    renderRows(items, keys);
+                }).catch(function(){ statusEl && (statusEl.textContent = 'Chyba pri načítaní'); renderRows([], null); });
+        }
+
+        if (yearSel) yearSel.addEventListener('change', fetchAndRender);
+        if (genderSel) genderSel.addEventListener('change', fetchAndRender);
+        if (resetBtn) resetBtn.addEventListener('click', function(){ if (yearSel) yearSel.value=''; if (genderSel) genderSel.value=''; fetchAndRender(); });
+
+        // initial load when admin page opens
+        document.addEventListener('DOMContentLoaded', function(){ fetchAndRender(); });
+    })();
+
+})();
 </script>

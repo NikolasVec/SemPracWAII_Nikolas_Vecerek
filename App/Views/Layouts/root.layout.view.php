@@ -91,7 +91,7 @@
                 <?php if ($layoutPresenter->isAdmin()) { ?>
                     <!-- Admin: link to admin dashboard + logout -->
                     <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->adminUrl() ?>"><strong>Administrácia</strong></a>
-                    <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->loginUrl() ?>"><strong>Log out</strong></a>
+                    <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('auth.logout') ?>"><strong>Log out</strong></a>
                 <?php } else { ?>
                     <!-- Non-admins: provide link to profile in offcanvas; logout available on profile page -->
                     <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->profileUrl() ?>"><strong>Môj profil</strong></a>
