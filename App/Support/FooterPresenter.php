@@ -83,5 +83,37 @@ class FooterPresenter
 
         return $out;
     }
-}
 
+    /**
+     * Returns prepared contact info for presentation.
+     * Keys: email, mailto, phone, tel, facebook, instagram
+     * All values are strings (empty when not available).
+     */
+    public function getPreparedContact(): array
+    {
+        $email = $this->getContactEmail() ?? '';
+        $phone = $this->getContactPhone() ?? '';
+        $facebook = $this->getFacebookUrl() ?? '';
+        $instagram = $this->getInstagramUrl() ?? '';
+
+        return [
+            'email' => $email,
+            'mailto' => $email !== '' ? 'mailto:' . $email : '',
+            'phone' => $phone,
+            'tel' => $phone !== '' ? 'tel:' . $phone : '',
+            'facebook' => $facebook,
+            'instagram' => $instagram,
+        ];
+    }
+
+    /**
+     * Returns a presentation-ready copyright line (HTML).
+     * The app name is escaped here so the view can render the string directly.
+     */
+    public function getCopyrightLine(): string
+    {
+        $year = date('Y');
+        $appName = htmlspecialchars((string)\App\Configuration::APP_NAME, ENT_QUOTES, 'UTF-8');
+        return '&copy; ' . $year . ' ' . $appName . ' — Všetky práva vyhradené';
+    }
+}

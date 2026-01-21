@@ -214,10 +214,43 @@
         }
     }
 
-    if (document.readyState === 'loading') {
-        document.addEventListener('DOMContentLoaded', init);
-    } else {
-        init();
+    // Wait for mapa.css to load before initializing
+    function waitForCssLoad(callback) {
+        var checkInterval = 50;
+        var maxAttempts = 20;
+        var attempts = 0;
+
+        function checkCssLoaded() {
+            var sheets = document.styleSheets;
+            for (var i = 0; i < sheets.length; i++) {
+                var sheet = sheets[i];
+                try {
+                    if (sheet.href && sheet.href.indexOf('mapa.css') !== -1) {
+                        // Check if the sheet is already applied
+                        if (sheet.cssRules && sheet.cssRules.length > 0) {
+                            callback();
+                            return;
+                        }
+                        // Sheet is not applied yet, wait and check again
+                    }
+                } catch (e) {
+                    // Ignore cross-origin restrictions, just continue checking
+                }
+            }
+
+            attempts++;
+            if (attempts < maxAttempts) {
+                setTimeout(checkCssLoaded, checkInterval);
+            } else {
+                // Fallback: if CSS load is not detected, initialize anyway after a delay
+                setTimeout(callback, 500);
+            }
+        }
+
+        checkCssLoaded();
     }
+
+    // Start the whole process
+    waitForCssLoad(init);
 
 })();

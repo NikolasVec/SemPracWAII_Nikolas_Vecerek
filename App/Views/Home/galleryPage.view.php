@@ -12,7 +12,7 @@ $albums = $galleryPresenter->getAlbums();
 <div class="container py-4">
     <br>
     <br>
-    <h1>Galéria</h1>
+    <h1>Galéria fotiek</h1>
 
     <?php if (empty($albums)): ?>
         <p>Galeria je prázdna.</p>

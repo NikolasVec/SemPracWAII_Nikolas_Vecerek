@@ -17,11 +17,13 @@
         <div class="row">
             <div class="col-md-6">
                 <h2>Muži</h2>
+                <?php
+                // presentation-only: use prepared variables from controller, fallback to safe defaults
+                $finishedM = $finishedM ?? [];
+                $maleResults = $maleResults ?? [];
+                ?>
+
                 <?php if (!empty($maleResults)): ?>
-                    <?php
-                    // keep only those with a non-empty time
-                    $finishedM = array_filter($maleResults, function($r) { return !empty($r['cas_dobehnutia']); });
-                    ?>
                     <?php if (!empty($finishedM)): ?>
                     <table class="table table-striped">
                         <thead>
@@ -53,10 +55,13 @@
 
             <div class="col-md-6">
                 <h2>Ženy </h2>
+                <?php
+                // presentation-only: use prepared variables from controller, fallback to safe defaults
+                $finishedF = $finishedF ?? [];
+                $femaleResults = $femaleResults ?? [];
+                ?>
+
                 <?php if (!empty($femaleResults)): ?>
-                    <?php
-                    $finishedF = array_filter($femaleResults, function($r) { return !empty($r['cas_dobehnutia']); });
-                    ?>
                     <?php if (!empty($finishedF)): ?>
                     <table class="table table-striped">
                         <thead>

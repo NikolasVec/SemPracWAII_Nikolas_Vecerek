@@ -14,6 +14,7 @@
                 <div class="card-body">
                     <h2 class="card-title text-center mb-4">Registrácia na beh</h2>
                     <?php
+                    // Presentation-only: show messages supplied by controller
                     if (!empty($success)) {
                         echo '<div class="alert alert-success">' . htmlspecialchars($success) . '</div>';
                     }
@@ -34,28 +35,28 @@
                         <?php
                     }
 
-                    // form values come from controller in $form array; provide safe defaults
-                    $f = $form ?? ['meno' => '', 'priezvisko' => '', 'email' => '', 'pohlavie' => 'M'];
+                    // The controller must provide a $form array with keys: 'meno','priezvisko','email','pohlavie'
+                    $form = $form ?? ['meno' => '', 'priezvisko' => '', 'email' => '', 'pohlavie' => 'M'];
                     ?>
                     <form method="post" action="">
                         <input type="hidden" name="_csrf" value="<?= htmlspecialchars((string)($csrfToken ?? '')) ?>">
                         <div class="mb-3">
                             <label for="meno" class="form-label">Meno:</label>
-                            <input type="text" id="meno" name="meno" class="form-control" required value="<?= htmlspecialchars($f['meno'] ?? '') ?>">
+                            <input type="text" id="meno" name="meno" class="form-control" required value="<?= htmlspecialchars($form['meno'] ?? '') ?>">
                         </div>
                         <div class="mb-3">
                             <label for="priezvisko" class="form-label">Priezvisko:</label>
-                            <input type="text" id="priezvisko" name="priezvisko" class="form-control" required value="<?= htmlspecialchars($f['priezvisko'] ?? '') ?>">
+                            <input type="text" id="priezvisko" name="priezvisko" class="form-control" required value="<?= htmlspecialchars($form['priezvisko'] ?? '') ?>">
                         </div>
                         <div class="mb-3">
                             <label for="email" class="form-label">Email:</label>
-                            <input type="email" id="email" name="email" class="form-control" required value="<?= htmlspecialchars($f['email'] ?? '') ?>">
+                            <input type="email" id="email" name="email" class="form-control" required value="<?= htmlspecialchars($form['email'] ?? '') ?>">
                         </div>
                         <div class="mb-3">
                             <label for="pohlavie" class="form-label">Pohlavie:</label>
                             <select id="pohlavie" name="pohlavie" class="form-select" required>
-                                <option value="M" <?= (isset($f['pohlavie']) && ($f['pohlavie'] === 'M')) ? 'selected' : '' ?>>Muž</option>
-                                <option value="Ž" <?= (isset($f['pohlavie']) && ($f['pohlavie'] === 'Ž')) ? 'selected' : '' ?>>Žena</option>
+                                <option value="M" <?= (isset($form['pohlavie']) && ($form['pohlavie'] === 'M')) ? 'selected' : '' ?>>Muž</option>
+                                <option value="Ž" <?= (isset($form['pohlavie']) && ($form['pohlavie'] === 'Ž')) ? 'selected' : '' ?>>Žena</option>
                             </select>
                         </div>
                         <div class="d-grid">

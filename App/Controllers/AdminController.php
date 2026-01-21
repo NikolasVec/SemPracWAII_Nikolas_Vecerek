@@ -255,7 +255,8 @@ class AdminController extends BaseController
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
-                $obrazok_odzak = trim($_POST['obrazok_odzak'] ?? '');
+                // correct field name: 'obrazok_odkaz' (previously misspelled as obrazok_odzak)
+                $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? $_POST['obrazok_odzak'] ?? '');
                 // optional relative positions on the admin map image (0..1)
                 $x_pos = trim($_POST['x_pos'] ?? '');
                 $y_pos = trim($_POST['y_pos'] ?? '');
@@ -287,7 +288,7 @@ class AdminController extends BaseController
 
                 // convert empty strings to NULL so DB can store default NULL
                 $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
-                $obrazokVal = $obrazok_odzak === '' ? null : $obrazok_odzak;
+                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
 
                 $stmt = $conn->prepare('INSERT INTO Stanovisko (nazov, poloha, popis, mapa_odkaz, obrazok_odkaz, ID_roka, x_pos, y_pos) VALUES (?, ?, ?, ?, ?, ?, ?, ?)');
                 $stmt->execute([$nazov, $poloha, $popis, $mapaVal, $obrazokVal, (int)$ID_roka, $xVal, $yVal]);
@@ -699,7 +700,8 @@ class AdminController extends BaseController
                 $poloha = trim($_POST['poloha'] ?? '');
                 $popis = trim($_POST['popis'] ?? '');
                 $mapa_odkaz = trim($_POST['mapa_odkaz'] ?? '');
-                $obrazok_odzak = trim($_POST['obrazok_odzak'] ?? '');
+                // correct field name: 'obrazok_odkaz' (previously misspelled as obrazok_odzak)
+                $obrazok_odkaz = trim($_POST['obrazok_odkaz'] ?? $_POST['obrazok_odzak'] ?? '');
                 $x_pos = trim($_POST['x_pos'] ?? '');
                 $y_pos = trim($_POST['y_pos'] ?? '');
                 $ID_roka = $_POST['ID_roka'] ?? null;
@@ -709,7 +711,7 @@ class AdminController extends BaseController
                 }
 
                 $mapaVal = $mapa_odkaz === '' ? null : $mapa_odkaz;
-                $obrazokVal = $obrazok_odzak === '' ? null : $obrazok_odzak;
+                $obrazokVal = $obrazok_odkaz === '' ? null : $obrazok_odkaz;
                 $xVal = ($x_pos === '' ? null : (is_numeric($x_pos) ? $x_pos : null));
                 $yVal = ($y_pos === '' ? null : (is_numeric($y_pos) ? $y_pos : null));
 

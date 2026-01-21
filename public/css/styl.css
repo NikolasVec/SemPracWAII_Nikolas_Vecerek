@@ -374,4 +374,4 @@ a.text-decoration-none > .home-card {
     .home-top-lift { margin-top: calc(-56px - 0.75rem); }
 }
 
-
+/* Removed map-related rules (moved to public/css/mapa.css) */

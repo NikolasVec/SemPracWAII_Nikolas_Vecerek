@@ -268,6 +268,8 @@ class HomeController extends BaseController
         $maleResults = [];
         $femaleResults = [];
         $resultsYearLabel = null;
+        $finishedM = [];
+        $finishedF = [];
 
         if ($resultsYear !== null) {
             // fetch human-readable year value from rokKonania
@@ -291,6 +293,11 @@ class HomeController extends BaseController
             $femaleResults = $stmtF->fetchAll();
 
 
+            // prepare finished-only lists (non-empty cas_dobehnutia) for presentation
+            $finishedM = array_values(array_filter($maleResults, function($r) { return !empty($r['cas_dobehnutia']); }));
+            $finishedF = array_values(array_filter($femaleResults, function($r) { return !empty($r['cas_dobehnutia']); }));
+
+
             // --- credit matching user accounts: removed ---
             // The previous implementation updated Pouzivatelia.zabehnute_kilometre and Pouzivatelia.vypite_piva here.
             // That logic has been intentionally removed so it can be redesigned and implemented elsewhere.
@@ -301,6 +308,8 @@ class HomeController extends BaseController
         return $this->html([
             'maleResults' => $maleResults,
             'femaleResults' => $femaleResults,
+            'finishedM' => $finishedM,
+            'finishedF' => $finishedF,
             'resultsYear' => $resultsYear,
             'resultsYearLabel' => $resultsYearLabel
         ]);
