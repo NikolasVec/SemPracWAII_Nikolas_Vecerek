@@ -72,47 +72,5 @@ $view->setLayout('auth');
     </div>
 </div>
 
-<script src="/js/script.js"></script>
-<script>
-    (function(){
-        var form = document.querySelector('form.form-signin');
-        if (!form) return;
-        var pwInput = document.getElementById('password');
-        var confirmInput = document.getElementById('confirmPassword');
-        var pwError = document.getElementById('passwordError');
-
-        form.addEventListener('submit', function(e){
-            var pw = pwInput.value || '';
-            var conf = confirmInput.value || '';
-
-            if (pw !== conf) {
-                pwError.textContent = 'Heslo sa nezhoduje. Skúste to znova.';
-                pwError.style.display = 'block';
-                e.preventDefault();
-                return;
-            }
-
-            // Count letters using Unicode property if available, fallback to ASCII letters
-            let lettersCount;
-            let letters;
-            try {
-                letters = pw.match(/\p{L}/gu);
-                lettersCount = letters ? letters.length : 0;
-            } catch (err) {
-                letters = pw.match(/[A-Za-z]/g);
-                lettersCount = letters ? letters.length : 0;
-            }
-            var hasDigit = /\d/.test(pw);
-
-            if (lettersCount < 5 || !hasDigit) {
-                pwError.textContent = 'Heslo musí obsahovať minimálne 5 písmen a aspoň jedno číslo.';
-                pwError.style.display = 'block';
-                e.preventDefault();
-                return;
-            }
-
-            // clear previous error
-            pwError.style.display = 'none';
-        });
-    })();
-</script>
+<script src="<?= $link->asset('js/script.js') ?>"></script>
+<script src="<?= $link->asset('js/registration.js') ?>"></script>

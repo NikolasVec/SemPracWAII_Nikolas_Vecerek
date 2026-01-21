@@ -373,3 +373,5 @@ a.text-decoration-none > .home-card {
     /* smaller navbar + spacing on narrow screens */
     .home-top-lift { margin-top: calc(-56px - 0.75rem); }
 }
+
+

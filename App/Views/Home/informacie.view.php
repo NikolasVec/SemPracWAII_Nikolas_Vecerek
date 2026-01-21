@@ -7,13 +7,19 @@
         <div class="col-12">
             <h2>Informácie a pravidlá behu</h2>
             <hr>
-            <p>Vitajte na stránke s informáciami o podujatí BEH PO PIVO. Nižšie nájdete základné pravidlá, bezpečnostné pokyny a dôležité informácie pre účastníkov.</p>
+            Pred viac ako trinástimi rokmi prišli mladí ľudia s nápadom na beh, ktorý nespája len šport, ale aj zábavu s priateľmi a radosť labužníkov piva.
+            Od samého začiatku sa koná v Martine, kde trasa vedie cez známe martinské podniky, takže nohy bežia a smäd má cieľ. Podujatie tradične prebieha na konci leta.
+            <p>Účastníkov čakajú pestré ceny, ktoré potešia rýchlych aj vytrvalých.</p>
 
             <h4>Všeobecné pravidlá</h4>
             <ul>
+                <li>Zúčastniť sa môžu iba osoby staršie ako 18 rokov.</li>
                 <li>Účasť na behu je na vlastnú zodpovednosť.</li>
-                <li>Respektujte pokyny organizátorov a dobrovoľníkov.</li>
-                <li>Zabezpečte si vhodnú obuv a oblečenie podľa poveternostných podmienok.</li>
+                <li>Pred behom je uverejnená trasa, počet prevádzok aj časový limit na jej zdolanie.</li>
+                <li> Na štarte dostane žetóny, ktoré vymieňa za pivo v jednotlivých prevádzkach (1 žetón = 1 pivo).</li>
+                <li>Každý účastník musí vypiť celé pivo (muži 0,5 l; ženy 0,3 l alebo 0,5 l).</li>
+                <li>Po vypití piva si vyžiada pečiatku od pivnej kontroly do svojho pivného indexu, následne beží do ďalšej prevádzky.</li>
+                <li>Účastník musí do cieľa dobehnúť s pečiatkami z každej prevádzky. Nesmie vynechať žiadnu zastávku ani pivo.</li>
             </ul>
 
             <h4>Bezpečnosť</h4>
@@ -24,7 +30,7 @@
 
             <h4>Registrácia a štart</h4>
             <ul>
-                <li>Registrácia prebieha online cez registračný formulár.</li>
+                <li>Registrácia prebieha online cez registračný formulár alebo na štarte behu.</li>
                 <li>Štart prebieha podľa časového harmonogramu. Buďte na mieste v dostatočnom predstihu.</li>
             </ul>
 
