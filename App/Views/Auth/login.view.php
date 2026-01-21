@@ -17,10 +17,13 @@ $lockMinutes = $isLocked ? (int)ceil(((int)$lockoutExpiresAt - time()) / 60) : 0
 ?>
 
 <div class="container">
-    <div class="row">
-        <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">
-            <div class="card card-signin my-5">
-                <div class="card-body">
+    <div class="row justify-content-center">
+        <div class="col-sm-9 col-md-7 col-lg-5">
+            <!-- moved card closer to top: replaced my-5 with mt-4 and added subtle shadow -->
+            <div class="card card-signin mt-4 shadow-sm">
+                <!-- yellow top stripe for visual accent -->
+                <div style="height:8px; background: #ffd54f; border-top-left-radius: .25rem; border-top-right-radius: .25rem;"></div>
+                <div class="card-body" style="background: linear-gradient(to bottom, #fffaf0, #ffffff);">
                     <h5 class="card-title text-center">Prihlásenie</h5>
                     <div class="text-center text-danger mb-3">
                         <?= @$message ?>
@@ -49,12 +52,14 @@ $lockMinutes = $isLocked ? (int)ceil(((int)$lockoutExpiresAt - time()) / 60) : 0
                                    placeholder="Password" required <?= $disabledAttr ?> >
                         </div>
                         <div class="text-center">
-                            <button class="btn btn-primary" type="submit" name="submit" <?= $disabledAttr ?>>Log in
+                            <!-- use a yellow (warning) button for emphasis -->
+                            <button class="btn btn-warning text-dark" type="submit" name="submit" <?= $disabledAttr ?>>Prihlásiť sa
                             </button>
                         </div>
                     </form>
                     <div class="text-center mt-3">
-                        <a href="<?= $link->url('auth.newUserRegistration') ?>" class="btn btn-secondary">Zaregistruj sa</a>
+                        <!-- registration link styled with yellow outline to match theme -->
+                        <a href="<?= $link->url('auth.newUserRegistration') ?>" class="btn btn-outline-warning">Zaregistruj sa</a>
                     </div>
                 </div>
             </div>
