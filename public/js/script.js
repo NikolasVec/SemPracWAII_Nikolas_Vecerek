@@ -1,7 +1,8 @@
-
+// Po načítaní DOM vykonaj inicializáciu udalostí
 document.addEventListener('DOMContentLoaded', function() {
     const form = document.querySelector('.form-signin');
     if (form) {
+        // Validácia hesiel pri odoslaní formulára
         form.addEventListener('submit', function(event) {
             const passwordField = document.getElementById('password');
             const confirmPasswordField = document.getElementById('confirmPassword');
@@ -10,6 +11,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 const password = passwordField.value.trim();
                 const confirmPassword = confirmPasswordField.value.trim();
 
+                // Skontroluj, či heslá nie sú prázdne a sú zhodné
                 if (!password || !confirmPassword || password !== confirmPassword) {
                     event.preventDefault();
                     alert('Heslá sa nezhodujú alebo sú prázdne!');
@@ -19,12 +21,12 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     }
 
-    // Initialize Bootstrap popovers for elements that request it (person icon for non-admins)
+    // Inicializácia Bootstrap popoverov pre prvky, ktoré to požadujú
     try {
         var popoverTriggerList = [].slice.call(document.querySelectorAll('[data-bs-toggle="popover"]'));
         popoverTriggerList.forEach(function (popoverTriggerEl) {
             // eslint-disable-next-line no-undef
-            // Build content from data attributes (so we don't rely on data-bs-content attribute)
+            // Vytvorenie obsahu popoveru z data-atribútov
             var name = popoverTriggerEl.getAttribute('data-user-name') || '';
             var email = popoverTriggerEl.getAttribute('data-user-email') || '';
             var km = popoverTriggerEl.getAttribute('data-user-km') || '0';
@@ -34,15 +36,16 @@ document.addEventListener('DOMContentLoaded', function() {
                 '<div><strong>Zabehnuté km:</strong> ' + km + '</div>' +
                 '<div><strong>Počet vypitých pív:</strong> ' + beers + '</div>';
 
-            // Debug log for initialization
+            // Ladací výpis pri inicializácii
             try { console.debug('Initializing popover for element', popoverTriggerEl, {name: name, email: email, km: km, beers: beers}); } catch (e) {}
 
-            // Quick fix: use click trigger for user-info popovers to ensure visibility on hover issues
+            // Voľba triggeru: pre užívateľské popovery použijeme kliknutie
             var triggerMode = 'click';
-            // If not a user-info popover, fall back to element's attribute
+            // Ak to nie je user-info popover, použij atribút alebo predvolený hover focus
             if (!popoverTriggerEl.hasAttribute('data-user-name')) {
                 triggerMode = popoverTriggerEl.getAttribute('data-bs-trigger') || 'hover focus';
             }
+            // Vytvor popover s nastaveným triggerom a obsahom
             new bootstrap.Popover(popoverTriggerEl, {
                 trigger: triggerMode,
                 html: true,
@@ -51,7 +54,7 @@ document.addEventListener('DOMContentLoaded', function() {
                 },
                 container: document.body
             });
-            // Ensure click toggles the popover reliably for user-info elements
+            // Zabezpeč spoľahlivé prepínanie popoveru klikom pre user-info prvky
             try {
                 if (popoverTriggerEl.hasAttribute('data-user-name')) {
                     popoverTriggerEl.addEventListener('click', function (ev) {
@@ -66,7 +69,7 @@ document.addEventListener('DOMContentLoaded', function() {
             } catch (e) { console.warn('Adding click toggle failed', e); }
          });
      } catch (e) {
-        // If Bootstrap is not available, warn in console so we can debug why popovers don't show
+        // Ak Bootstrap nie je dostupný, vypíš varovanie do konzoly
         console.warn('Bootstrap popover init failed', e);
     }
 });

@@ -6,7 +6,7 @@
 <div class="container-fluid">
     <div class="row">
         <div class="col">
-            <!-- Admin sections navigation -->
+            <!-- Navigácia sekcií -->
             <nav class="admin-nav mb-3">
               <div class="btn-group" role="group" aria-label="Admin sections">
                 <button type="button" class="btn btn-outline-primary admin-nav-btn" data-section="bezci" onclick="showSection('bezci')">Bežci</button>
@@ -21,7 +21,7 @@
             <div class="admin-section" data-section="bezci">
             <h3>Bežci</h3>
 
-            <!-- Filters: year and gender -->
+            <!-- Filtre: rok a pohlavie -->
             <div class="mb-3 d-flex gap-2 align-items-center" id="bezciFilters">
                 <div>
                     <label for="bezciYearFilter" class="form-label mb-0 small">Rok</label>
@@ -46,20 +46,20 @@
                 <div class="ms-auto small text-muted align-self-end" id="bezciFilterStatus" aria-live="polite"></div>
             </div>
 
-            <!-- Replace server-rendered table with JS-driven container to avoid duplicates -->
+            <!-- JS kontajner pre tabuľku (zamedzí duplicitám) -->
             <div class="table-scroll-wrapper">
                 <div id="bezciTableContainer"></div>
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('bezci')">Pridať</button>
-                <!-- global edit/delete removed in favor of per-row actions -->
+                <!-- globálne upravovanie/mazanie zrušené; akcie sú po riadku -->
             </div>
             </div> <!-- end section bezci -->
 
             <div class="admin-section" data-section="roky">
             <h3>Roky konania</h3>
             <div class="mb-4">
-                <!-- manual crediting UI removed; crediting is automatic based on DB records -->
+                <!-- Manuálne pripisovanie kreditov zrušené; pripisovanie sa vykonáva automaticky -->
             </div>
             <div class="table-scroll-wrapper">
             <table class="table table-bordered table-striped">
@@ -84,7 +84,7 @@
                         <?php foreach ($colsRoky as $col): ?>
                             <td><?= htmlspecialchars((string)($rok[$col] ?? '')) ?></td>
                         <?php endforeach; ?>
-                        <!-- actions: set/clear results year + edit/delete -->
+                        <!-- akcie: nastaviť/zrušiť výsledkový rok + upraviť/mazať -->
                         <td>
                             <div class="d-flex flex-column">
                                 <div class="mb-2 d-flex align-items-center">
@@ -110,7 +110,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('roky')">Pridať</button>
-                <!-- global edit/delete removed in favor of per-row actions -->
+                <!-- globálne upravovanie/mazanie zrušené; akcie sú po riadku -->
             </div>
             </div> <!-- end section roky -->
 
@@ -150,7 +150,7 @@
             </div>
             <div class="mb-4">
                 <button class="btn btn-primary" onclick="openAddModal('stanoviska')">Pridať</button>
-                <!-- global edit/delete removed in favor of per-row actions -->
+                <!-- globálne upravovanie/mazanie zrušené; akcie sú po riadku -->
             </div>
             </div> <!-- end section stanoviska -->
 
@@ -196,7 +196,7 @@
     </div>
 </div>
 
-<!-- Sponsors management -->
+<!-- Správa sponzorov -->
 <div class="admin-section" data-section="sponsors">
 <div class="container-fluid mt-4">
     <h3>Sponzori (footer)</h3>
@@ -245,12 +245,12 @@
     </div>
     <div class="mb-4">
         <button class="btn btn-primary" onclick="openAddModal('sponsors')">Pridať</button>
-        <!-- global edit/delete removed in favor of per-row actions -->
+        <!-- globálne upravovanie/mazanie zrušené; akcie sú po riadku -->
     </div>
 </div>
 </div> <!-- end section sponsors -->
 
-<!-- Users management -->
+<!-- Správa používateľov -->
 <div class="admin-section" data-section="pouzivatelia">
 <div class="container-fluid mt-4">
     <h3>Používatelia</h3>
@@ -298,7 +298,7 @@
     </div>
     <div class="mb-4">
         <button class="btn btn-primary" onclick="openAddModal('pouzivatelia')">Pridať</button>
-        <!-- global edit/delete removed in favor of per-row actions -->
+        <!-- globálne upravovanie/mazanie zrušené; akcie sú po riadku -->
     </div>
 </div>
 </div> <!-- end section pouzivatelia -->
@@ -439,7 +439,7 @@
                 <?php if (!empty($albums)): ?>
                     <?php foreach ($albums as $alb): ?>
                         <?php $aid = $alb['ID_album'] ?? $alb['album']['ID_album'] ?? null; $aname = $alb['name'] ?? $alb['album']['name'] ?? ''; ?>
-                        <?php if ($aid): ?><option value="<?= htmlspecialchars((string)$aid) ?>"><?= htmlspecialchars((string)$aname) ?></option><?php endif; ?>
+                        <?php if ($aid): ?><option value="<?= htmlspecialchars((string)$aid) ?>"><?php echo htmlspecialchars((string)$aname) ?></option><?php endif; ?>
                     <?php endforeach; ?>
                 <?php endif; ?>
             </select>
@@ -477,16 +477,16 @@
 </div>
 
 <style>
-/* simple admin section show/hide */
+/* jednoduché zobrazenie/skrytie sekcií admina */
 .admin-section{ display:none; }
 .admin-section.active{ display:block; }
 .admin-nav-btn.active{ box-shadow: inset 0 -3px 0 rgba(0,123,255,0.25); }
 </style>
 
-<!-- expose CSRF token for JS -->
+<!-- vystavenie CSRF tokenu pre JS -->
 <script>
     window.CSRF_TOKEN = '<?= htmlspecialchars((string)($csrfToken ?? '')) ?>';
 </script>
 
-<!-- Load external admin JS (moved from inline scripts) -->
+<!-- Načítaj externý admin JS -->
 <script src="<?= isset($link) ? $link->asset('js/admin.admin.js') : '/js/admin.admin.js' ?>"></script>

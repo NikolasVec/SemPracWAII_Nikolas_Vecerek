@@ -12,7 +12,7 @@
 
 <div class="container">
     <div class="row">
-        <!-- Left: list of locations -->
+        <!-- Ľavý stĺpec: zoznam stanovísk -->
         <div class="col-md-4">
             <br>
             <br>
@@ -25,7 +25,7 @@
                             $nazov = $s['nazov'] ?? 'Bez názvu';
                             $poloha = $s['poloha'] ?? '';
                             $popis = $s['popis'] ?? '';
-                            $mapa_href = $s['mapa_href'] ?? null; // prepared by presenter
+                            $mapa_href = $s['mapa_href'] ?? null;
                         ?>
                         <div class="list-group-item list-group-item-action" role="button" tabindex="0"
                            data-id="<?= htmlspecialchars($s['ID_stanoviska'] ?? '', ENT_QUOTES) ?>"
@@ -54,7 +54,7 @@
             </div>
         </div>
 
-        <!-- Right: big map image -->
+        <!-- Pravý stĺpec: mapa -->
         <div class="col-md-8">
             <br>
             <br>
@@ -62,11 +62,11 @@
             <div class="card">
                 <div class="card-body p-0" style="background:#f8f9fa;">
                     <div id="mapImageContainer" style="position:relative; --marker-offset-x: -25%; --marker-offset-y: -90%;">
-                        <img id="mapImg" src="/images/mapa_MartinNEW.png" alt="Mapa Martin" class="img-fluid w-100" style="max-height:600px; object-fit:contain; display:block;">
+                        <img id="mapImg" src="<?= $link->asset('images/mapa_MartinNEW.png') ?>" alt="Mapa Martin" class="img-fluid w-100" style="max-height:600px; object-fit:contain; display:block;">
                         <?php if (!empty($stanoviska) && is_array($stanoviska)): ?>
                             <?php foreach ($stanoviska as $s): ?>
                                 <?php
-                                    $markerLeft = $s['markerLeft'] ?? null; // prepared by presenter, e.g. '12.3%'
+                                    $markerLeft = $s['markerLeft'] ?? null; // pripravené presenterom, napr. '12.3%'
                                     $markerTop = $s['markerTop'] ?? null;
                                     if ($markerLeft === null || $markerTop === null) continue;
                                     $nazov = htmlspecialchars($s['nazov'] ?? '', ENT_QUOTES);
@@ -77,12 +77,12 @@
                                 ?>
                                 <div class="overlay-marker" data-id="<?= htmlspecialchars($s['ID_stanoviska'] ?? '', ENT_QUOTES) ?>" data-nazov="<?= $nazov ?>" data-poloha="<?= $poloha ?>" data-popis="<?= $popis ?>" data-mapa="<?= $mapa_href ?>" data-image="<?= $img_link ?>" style="position:absolute; left:<?= $markerLeft ?>; top:<?= $markerTop ?>; z-index:50; cursor:pointer;">
                                      <div class="marker-shape" aria-hidden="true">
-                                         <img src="/images/Beer_icon.png" alt="Pivo" />
+                                         <img src="<?= $link->asset('images/Beer_icon.png') ?>" alt="Pivo" />
                                      </div>
                                  </div>
                              <?php endforeach; ?>
                          <?php endif; ?>
-                         <!-- map bubble inserted inside container so positioning is relative to this element -->
+                         <!-- Bublina mapy vložená v kontejnery; pozícia je relatívna k tomuto elementu -->
                         <div id="mapBubble" class="map-bubble" aria-hidden="true"></div>
                      </div>
                   </div>
@@ -93,4 +93,4 @@
  </div>
 
 <link rel="stylesheet" href="<?= $link->asset('css/mapa.css') ?>">
-<script src="/js/mapa-bubbles.js"></script>
+<script src="<?= $link->asset('js/mapa-bubbles.js') ?>"></script>

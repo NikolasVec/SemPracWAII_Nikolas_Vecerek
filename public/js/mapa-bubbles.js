@@ -1,7 +1,7 @@
 (function(){
     'use strict';
 
-    // helper to normalize simple filenames to an image src (same logic as previous modal helper)
+    // Normalizuje jednoduché názvy súborov na src obrázka (vráti absolútnu alebo /images/ cestu)
     function normalizeImgSrc(im) {
         if (!im) return '';
         // If the image is already an absolute URL (http(s)://) or root-relative (/...), return as-is
@@ -9,13 +9,13 @@
         return '/images/' + im.replace(/^\/+/, '').trim();
     }
 
-    // escape text for safe insertion inside small bubble
+    // Escapuje text pre bezpečné vloženie do HTML bubliny
     function escHtml(str) {
         if (!str) return '';
         return String(str).replace(/&/g,'&amp;').replace(/</g,'&lt;').replace(/>/g,'&gt;').replace(/"/g,'&quot;');
     }
 
-    // Ensure container and bubble exist; be defensive in case DOM structure changes
+    // Zabezpečí existenciu kontajnera a elementu bubliny, ak chýbajú, vytvorí ich
     function ensureMapElements() {
         var mapContainer = document.getElementById('mapImageContainer') || document.body;
         var bubble = document.getElementById('mapBubble');
@@ -28,6 +28,7 @@
         return { mapContainer: mapContainer, bubble: bubble };
     }
 
+    // Skryje a vyčistí obsah bubliny
     function hideBubble(bubble) {
         if (bubble) {
             bubble.style.display = 'none';
@@ -36,6 +37,7 @@
         }
     }
 
+    // Vytvorí a zobrazí obsah bubliny pre daný marker (text, obrázok, odkaz)
     function showBubbleFor(markerEl) {
         var els = ensureMapElements();
         var mapContainer = els.mapContainer;
@@ -62,11 +64,11 @@
         bubble2.style.display = 'block';
         bubble2.setAttribute('aria-hidden','false');
 
-        // hide images that error (attach handler instead of inline onerror)
+        // Skryje obrázky, ktoré sa nepodarí načítať
         var bubbleImgs = bubble2.querySelectorAll('img');
         bubbleImgs.forEach(function(bi){ bi.addEventListener('error', function(){ this.style.display = 'none'; }); });
 
-        // attach handlers: click-to-open external link on bubble card
+        // Pridá handler: kliknutie na kartu otvorí externý odkaz alebo obrázok
         var bubbleCard = bubble2.querySelector('.bubble-card');
         if (bubbleCard) {
             bubbleCard.style.cursor = 'pointer';
@@ -81,7 +83,7 @@
             });
         }
 
-        // Positioning needs to happen after images inside the bubble load (they change height)
+        // Pozicionovanie musí prebehnúť až po načítaní obrázkov (menia výšku)
         function positionBubble() {
             var contRect = mapContainer.getBoundingClientRect ? mapContainer.getBoundingClientRect() : { left: 0, top: 0, width: window.innerWidth, height: window.innerHeight };
             var mRect = markerEl.getBoundingClientRect();
@@ -167,7 +169,7 @@
         }
     }
 
-    // delegated click handler for list items and markers
+    // Delegovaný klik handler pre položky v zozname a markery
     function delegatedClickHandler(ev) {
         var listItem = ev.target && ev.target.closest ? ev.target.closest('.list-group-item-action') : null;
         if (listItem) {
@@ -183,17 +185,16 @@
             var im = listItem.dataset.image || '';
             if (ma) { window.open(ma, '_blank', 'noopener'); }
             else if (im) { window.open(normalizeImgSrc(im), '_blank', 'noopener'); }
-            return;
         }
 
         var markerEl = ev.target && ev.target.closest ? ev.target.closest('.overlay-marker') : null;
         if (markerEl) {
             ev.preventDefault(); ev.stopPropagation();
             showBubbleFor(markerEl);
-            return;
         }
     }
 
+    // Inicializuje event listenery a správanie bubliny (klik, resize, scroll)
     function init() {
         if (window && window.console) console.log('mapa-bubbles: init');
         document.addEventListener('click', delegatedClickHandler);
@@ -214,7 +215,7 @@
         }
     }
 
-    // Wait for mapa.css to load before initializing
+    // Čaká na načítanie súboru mapa.css pred inicializáciou (fallback po čase)
     function waitForCssLoad(callback) {
         var checkInterval = 50;
         var maxAttempts = 20;
@@ -222,14 +223,17 @@
 
         function checkCssLoaded() {
             var sheets = document.styleSheets;
+            var detected = false;
             for (var i = 0; i < sheets.length; i++) {
                 var sheet = sheets[i];
                 try {
                     if (sheet.href && sheet.href.indexOf('mapa.css') !== -1) {
                         // Check if the sheet is already applied
                         if (sheet.cssRules && sheet.cssRules.length > 0) {
+                            // zavoláme callback a ukončíme kontrolu
                             callback();
-                            return;
+                            detected = true;
+                            break;
                         }
                         // Sheet is not applied yet, wait and check again
                     }
@@ -238,12 +242,14 @@
                 }
             }
 
-            attempts++;
-            if (attempts < maxAttempts) {
-                setTimeout(checkCssLoaded, checkInterval);
-            } else {
-                // Fallback: if CSS load is not detected, initialize anyway after a delay
-                setTimeout(callback, 500);
+            if (!detected) {
+                attempts++;
+                if (attempts < maxAttempts) {
+                    setTimeout(checkCssLoaded, checkInterval);
+                } else {
+                    // Fallback: ak sa CSS neodhalí, inicializujeme po krátkej dobe
+                    setTimeout(callback, 500);
+                }
             }
         }
 

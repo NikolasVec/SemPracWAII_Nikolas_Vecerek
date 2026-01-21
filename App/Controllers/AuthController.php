@@ -10,22 +10,16 @@ use Framework\Http\Responses\Response;
 use Framework\Http\Responses\ViewResponse;
 
 /**
- * Class AuthController
+ * AuthController
  *
- * This controller handles authentication actions such as login, logout, and redirection to the login page. It manages
- * user sessions and interactions with the authentication system.
- *
- * @package App\Controllers
+ * Spravuje prihlasovanie, registráciu a odhlásenie.
  */
 class AuthController extends BaseController
 {
     /**
-     * Redirects to the login page.
+     * Presmeruje na prihlasovaciu stránku.
      *
-     * This action serves as the default landing point for the authentication section of the application, directing
-     * users to the login URL specified in the configuration.
-     *
-     * @return Response The response object for the redirection to the login page.
+     * @return Response
      */
     public function index(Request $request): Response
     {
@@ -33,29 +27,24 @@ class AuthController extends BaseController
     }
 
     /**
-     * Authenticates a user and processes the login request.
+     * Spracuje prihlásenie (login) a ochranu proti bruteforce.
      *
-     * This action handles user login attempts. If the login form is submitted, it attempts to authenticate the user
-     * with the provided credentials. Upon successful login, the user is redirected to the admin dashboard.
-     * If authentication fails, an error message is displayed on the login page.
-     *
-     * @return Response The response object which can either redirect on success or render the login view with
-     *                  an error message on failure.
-     * @throws Exception If the parameter for the URL generator is invalid throws an exception.
+     * @return Response
+     * @throws Exception
      */
     public function login(Request $request): Response
     {
         $session = $this->app->getSession();
 
-        // Configuration for login attempts/lockout
-        $maxAttempts = 5; // assumption: allow 5 attempts
-        $lockoutSeconds = 3600; // 1 hour lockout
+        // nastavenie počtu pokusov a doby zablokovania
+        $maxAttempts = 5; // povolené pokusy
+        $lockoutSeconds = 3600; // doba zablokovania v sekundách
 
-        // Read current counters from session
+        // načítať počítadlá zo session
         $attempts = (int)$session->get('login_attempts', 0);
         $lockedUntil = (int)$session->get('login_locked_until', 0);
 
-        // If currently locked, and lock not expired -> show message immediately
+        // ak je účet zablokovaný, vráti hlášku s časom
         if ($lockedUntil > time()) {
             $remaining = $lockedUntil - time();
             $minutes = (int)ceil($remaining / 60);
@@ -63,7 +52,7 @@ class AuthController extends BaseController
             return $this->html(['message' => $message, 'attemptsLeft' => 0, 'lockoutExpiresAt' => $lockedUntil]);
         }
 
-        // If lock expired previously, clear counters
+        // ak sa zablokovanie skončilo, vymaže počítadlá
         if ($lockedUntil > 0 && $lockedUntil <= time()) {
             $session->remove('login_attempts');
             $session->remove('login_locked_until');
@@ -73,11 +62,11 @@ class AuthController extends BaseController
 
         $logged = null;
         if ($request->hasValue('submit')) {
-            // Read email from form (input name changed to 'email')
+            // načítať hodnoty z formulára
             $email = trim((string)$request->value('email'));
             $password = $request->value('password');
 
-            // Server-side validation: require email and password
+            // validácia vstupu
             if ($email === '' || $password === null || $password === '') {
                 $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
                 $displayAttempts = ($attemptsLeftRaw === 1) ? 1 : null;
@@ -85,7 +74,7 @@ class AuthController extends BaseController
                 return $this->html(['message' => $message, 'attemptsLeft' => $displayAttempts, 'lockoutExpiresAt' => null]);
             }
 
-            // Validate email format
+            // overenie formátu emailu
             if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
                 $displayAttempts = ($attemptsLeftRaw === 1) ? 1 : null;
@@ -95,22 +84,22 @@ class AuthController extends BaseController
 
             $logged = $this->app->getAuthenticator()->login($email, $password);
             if ($logged) {
-                // Reset attempt counters on successful login
+                // úspešné prihlásenie -> vymazať počítadlá a presmerovať
                 $session->remove('login_attempts');
                 $session->remove('login_locked_until');
 
-                // Redirect admins to admin dashboard, non-admins to homepage
                 $appUser = $this->app->getAuthenticator()->getUser();
                 if ($appUser->isAdmin()) {
                     return $this->redirect($this->url("admin.index"));
                 }
                 return $this->redirect($this->url("home.index"));
             } else {
-                // Failed login: increment attempts and possibly set lockout
+                // neúspešné prihlásenie -> zvýšiť počet pokusov
                 $attempts++;
                 $session->set('login_attempts', $attempts);
 
                 if ($attempts >= $maxAttempts) {
+                    // nastaviť zablokovanie
                     $lockedUntil = time() + $lockoutSeconds;
                     $session->set('login_locked_until', $lockedUntil);
                     $minutes = (int)ceil($lockoutSeconds / 60);
@@ -130,34 +119,29 @@ class AuthController extends BaseController
             }
         }
 
-        // Default rendering (GET or no submit)
+        // zobrazenie formulára (GET)
         $attemptsLeftRaw = max(0, $maxAttempts - $attempts);
         $displayAttempts = ($attemptsLeftRaw === 1) ? 1 : null;
         return $this->html(['message' => ($logged === false ? 'Nesprávny e-mail alebo heslo' : null), 'attemptsLeft' => $displayAttempts, 'lockoutExpiresAt' => null]);
     }
 
     /**
-     * Logs out the current user.
+     * Odhlási používateľa a presmeruje na domovskú stránku.
      *
-     * This action terminates the user's session and redirects them to a view. It effectively clears any authentication
-     * tokens or session data associated with the user.
-     *
-     * @return ViewResponse The response object that renders the logout view.
+     * @return ViewResponse
      */
     public function logout(Request $request): Response
     {
-        // Terminate the current user session and redirect immediately to the homepage
+        // odhlási používateľa
         $this->app->getAuthenticator()->logout();
         return $this->redirect($this->url('home.index'));
     }
 
     /**
-     * Displays the registration form for new users.
+     * Zobrazí registračný formulár.
      *
-     * This action renders the registration page where users can fill out their details to create a new account.
-     *
-     * @param Request $request The HTTP request object.
-     * @return ViewResponse The response object for rendering the registration page.
+     * @param Request $request
+     * @return ViewResponse
      */
     public function newUserRegistration(Request $request): ViewResponse
     {
@@ -165,17 +149,14 @@ class AuthController extends BaseController
     }
 
     /**
-     * Handles the registration of a new user.
+     * Spracuje registráciu nového používateľa.
      *
-     * This action processes the registration form submission, validates the input,
-     * and inserts the new user into the database.
-     *
-     * @param Request $request The HTTP request object.
-     * @return Response The response object for redirecting or rendering a view.
+     * @param Request $request
+     * @return Response
      */
     public function registerUser(Request $request): Response
     {
-        // Validate input
+        // načíta vstupy z formulára
         $firstName = $request->value('firstName');
         $lastName = $request->value('lastName');
         $email = $request->value('email');
@@ -192,34 +173,30 @@ class AuthController extends BaseController
             return $this->html(['message' => 'Heslo sa nezhoduje. Skúste to znova.'], 'Auth/newUserRegistration');
         }
 
-        // Require password to contain at least 5 letters and at least one digit
-        // Count letters using preg_match_all for Unicode letters, fallback to extended Latin range
+        // overenie zloženia hesla
         $lettersCount = @preg_match_all('/\p{L}/u', $password);
         if ($lettersCount === false) {
-            // fallback to extended Latin (covers Slovak diacritics)
             $lettersCount = preg_match_all('/[A-Za-zÀ-ž]/u', $password);
         }
-        // Try Unicode digit category first (matches digits from other scripts), fallback to \d
         $hasDigit = @preg_match('/\p{Nd}/u', $password);
         if ($hasDigit === false) {
             $hasDigit = preg_match('/\\d/', $password);
         }
         if ($lettersCount === false || $lettersCount < 5 || !$hasDigit) {
-            // provide small, non-sensitive diagnostics to help debugging: number of letters and digit present
             $digitText = $hasDigit ? 'áno' : 'nie';
             $diag = " (písmen: " . ($lettersCount === false ? 'chyba' : $lettersCount) . ", číslo: " . $digitText . ")";
             return $this->html(['message' => 'Heslo musí obsahovať minimálne 5 písmen a aspoň jedno číslo.' . $diag], 'Auth/newUserRegistration');
         }
 
-        // Validate email form
+        // overenie formátu emailu
         if (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
             return $this->html(['message' => 'Zadaný email nemá správny formát.'], 'Auth/newUserRegistration');
         }
 
-        // Normalize email for comparison
+        // normalizácia emailu
         $emailNormalized = trim(strtolower((string)$email));
 
-        // Check if email is already registered
+        // kontrola, či email už existuje
         $db = $this->app->getDb();
         $stmtCheck = $db->prepare('SELECT COUNT(*) AS cnt FROM Pouzivatelia WHERE LOWER(email) = ?');
         $stmtCheck->execute([$emailNormalized]);
@@ -228,10 +205,10 @@ class AuthController extends BaseController
             return $this->html(['message' => 'Na tento email už existuje registrácia. Zvoľte iný email alebo sa prihláste.'], 'Auth/newUserRegistration');
         }
 
-        // Hash the password
+        // zahashovanie hesla
         $hashedPassword = password_hash($password, PASSWORD_BCRYPT);
 
-        // Insert user into the database
+        // vloženie používateľa do DB
         $db = $this->app->getDb();
         $stmt = $db->prepare(
             'INSERT INTO Pouzivatelia (meno, priezvisko, email, heslo, datum_narodenia, pohlavie) VALUES (?, ?, ?, ?, ?, ?)'
@@ -239,26 +216,23 @@ class AuthController extends BaseController
         try {
             $stmt->execute([$firstName, $lastName, $email, $hashedPassword, $birthDate, $gender]);
         } catch (\PDOException $e) {
-            // Handle duplicate email race condition (unique constraint) and other DB errors
+            // spracovanie chýb DB (duplicitný email a pod.)
             $sqlState = $e->getCode();
             if ($sqlState === '23000' || str_contains($e->getMessage(), 'Duplicate')) {
                 return $this->html(['message' => 'Tento email už existuje v našej databáze. Zvoľte iný email alebo sa prihláste.'], 'Auth/newUserRegistration');
             }
-            // Re-throw unexpected DB errors
             throw $e;
         }
 
-        // Redirect to the success registration page after successful registration
+        // presmerovanie po úspešnej registrácii
         return $this->redirect($this->url('auth.successRegistration'));
     }
 
     /**
-     * Displays the success registration page.
+     * Zobrazí stránku o úspešnej registrácii.
      *
-     * This action renders the success registration view to notify the user of successful registration.
-     *
-     * @param Request $request The HTTP request object.
-     * @return ViewResponse The response object for rendering the success registration page.
+     * @param Request $request
+     * @return ViewResponse
      */
     public function successRegistration(Request $request): ViewResponse
     {

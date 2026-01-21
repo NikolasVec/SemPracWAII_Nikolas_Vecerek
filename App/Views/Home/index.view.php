@@ -15,7 +15,6 @@
         </div>
     </div>
 
-    <!-- New three full-width cells under the main heading -->
     <div class="row mt-3">
         <div class="col-12">
             <div class="row">

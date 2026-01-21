@@ -1,19 +1,21 @@
-/* Ensure full-bleed layouts have no browser-default whitespace */
+/* Súbor: public/css/styl.css */
+
+/* Odstrániť predvolené okrajové medzery pre full-bleed layouty */
 html, body {
     height: 100%;
     margin: 0;
     padding: 0;
 }
 
-/* Make the page a column flex layout so footer can stick to the bottom when content is short */
+/* Stránka ako stĺpcový flex, footer na spodku */
 body {
     display: flex;
     flex-direction: column;
-    min-height: 100vh; /* ensure full viewport height */
-    padding-top: 70px; /* space for fixed-top navbar (matches .navbar min-height) */
+    min-height: 100vh; /* zabezpečí výšku okna */
+    padding-top: 70px; /* miesto pre fixný navbar */
 }
 
-/* The main content container should grow to fill available space between navbar and footer */
+/* Hlavný obsah rastie medzi navbarom a footerom */
 body > .container-fluid.mt-3 {
     flex: 1 0 auto;
 }
@@ -22,12 +24,12 @@ body > .container-fluid.mt-3 {
     flex: 1 0 auto;
 }
 
-/* Make footer truly full-bleed regardless of parent containers */
+/* Footer na celú šírku viewportu */
 .site-footer {
     position: relative;
     left: 50%;
     transform: translateX(-50%);
-    width: 100vw; /* cover viewport width */
+    width: 100vw;
     box-sizing: border-box;
     z-index: 0;
 }
@@ -37,6 +39,7 @@ body > .container-fluid.mt-3 {
     padding-right: 0;
 }
 
+/* Navigačný panel */
 .navbar {
     border-bottom: 1px solid gray;
     background: #ffce0a !important;
@@ -54,6 +57,7 @@ body > .container-fluid.mt-3 {
 
 }
 
+/* Logo s kruhom */
 .logo-with-circle {
     position: relative;
     display: flex;
@@ -84,28 +88,30 @@ body > .container-fluid.mt-3 {
     display: block;
 }
 
-/* Pull the homepage hero image up to hide the gap created by the fixed navbar */
+/* Posun hero obrázku pod navbarom */
 .home-hero-img {
     display: block;
     position: relative;
-    top: 0; /* no per-image offset: we'll lift the container instead for more reliable layout */
+    top: 0;
 }
 
+/* Názov "behpopivo" nad obrázkom */
 .behpopivo-nadpis {
     position: absolute;
-    top: 45%; /* moved higher */
+    top: 45%;
     left: 50%;
     transform: translate(-50%, -50%);
     color: #fff;
-    font-size: 12vw; /* made larger */
+    font-size: 12vw;
     font-weight: bold;
     text-shadow: 2px 2px 8px #000, 0 0 20px #000;
     letter-spacing: 0.1em;
     pointer-events: none;
     z-index: 2;
-    white-space: nowrap; /* zabezpečí jeden riadok */
+    white-space: nowrap; /* jeden riadok */
 }
 
+/* Rámec pre scroll tabuľku */
 .table-scroll-wrapper {
     width: 100%;
     max-width: 100%;
@@ -120,6 +126,7 @@ body > .container-fluid.mt-3 {
     width: max-content;
 }
 
+/* Štýl buniek tabuľky */
 table.table td, table.table th {
     padding: 0.2rem 0.2rem;
     font-size: 0.9em;
@@ -132,6 +139,7 @@ table.table td, table.table th {
 }
 
 
+/* Tlačidlá a linky v navbar-e */
 .navbar .nav-link,
 .navbar .btn {
     transition: background-color 180ms ease, color 180ms ease, transform 150ms ease, box-shadow 180ms ease;
@@ -148,7 +156,7 @@ table.table td, table.table th {
     gap: 0.4rem;
 }
 
-/* jemné zdvihnutie a tieň pri hover - teraz sivá pozadie */
+/* Hover efekt (zdvihnutie + tieň) */
 .navbar .nav-link:hover,
 .navbar .btn:hover {
     background: #ffffff;
@@ -157,36 +165,36 @@ table.table td, table.table th {
     color: #000;
 }
 
-/* aktívny/kliknutý stav */
+/* Aktívny stav tlačidla */
 .navbar .nav-link:active,
 .navbar .btn:active {
     transform: translateY(-1px);
     box-shadow: 0 6px 12px rgba(0,0,0,0.06);
 }
 
-/* varianty pre tmavšie tlačidlá, ak potrebné použiť triedu .btn-dark */
+/* Tmavší variant tlačidla */
 .navbar .btn-dark {
     background: rgba(0,0,0,0.08);
     color: #111;
     border: 1px solid rgba(0,0,0,0.12);
 }
 
-/* vizuálny focus pre prístupnosť (klávesnicová navigácia) */
+/* Focus pre prístupnosť (klávesnica) */
 .navbar .nav-link:focus,
 .navbar .btn:focus {
     outline: none;
-    box-shadow: 0 0 0 4px rgba(255, 206, 10, 0.22); /* žltý „halo" v súlade s témou */
+    box-shadow: 0 0 0 4px rgba(255, 206, 10, 0.22); /* žltý halo */
 }
 
-/* Ensure popover appears above navbar and other elements */
+/* Popover nad všetkými prvkami */
 .popover {
-    z-index: 99999 !important; /* ensure popover appears above everything */
+    z-index: 99999 !important; /* popover nad všetkým */
 }
 
-/* Make person icon indicate it's interactive */
+/* Ikona osoby je interaktívna */
 .navbar-text[role="button"] { cursor: pointer; }
 
-/* dekoratívna linková animácia (underline grow) */
+/* Dekoratívna animácia linky (underline grow) */
 .navbar .nav-link {
     background-image: linear-gradient(transparent, transparent), linear-gradient(90deg, rgba(0,0,0,0.12), rgba(0,0,0,0.12));
     background-repeat: no-repeat;
@@ -198,7 +206,7 @@ table.table td, table.table th {
     background-size: 100% 2px, 100% 100%;
 }
 
-/* malé rozhranie pre mobilné zariadenia */
+/* Mobilné úpravy pre malé obrazovky */
 @media (max-width: 576px) {
     .navbar .nav-link,
     .navbar .btn {
@@ -208,7 +216,7 @@ table.table td, table.table th {
     }
 }
 
-/* Voliteľné: jemné CSS pre ikony v tlačidlách (ak používate svg alebo img) */
+/* Ikony v tlačidlách - veľkosť */
 .navbar .btn img,
 .navbar .btn svg {
     width: 20px;
@@ -216,9 +224,9 @@ table.table td, table.table th {
     display: inline-block;
 }
 
-/* Hide nav items and center logo on narrow screens (<=1100px) */
+/* Skryť položky a centrovať logo na úzkych obrazovkách */
 @media (max-width: 1000px) {
-    /* Hide left/right navigation groups and the auth area */
+    /* Skryť skupiny navigácie a prihlasovanie */
     .nav-left-group,
     .nav-right-group,
     .nav-auth-group {
@@ -229,7 +237,7 @@ table.table td, table.table th {
         padding: 0 !important;
     }
 
-    /* Center the brand/logo in the navbar */
+    /* Centrovanie loga */
     .navbar .navbar-brand {
         margin-left: 0 !important;
         margin-right: 0 !important;
@@ -238,13 +246,13 @@ table.table td, table.table th {
         transform: translateX(-50%);
     }
 
-    /* Ensure the hamburger stays on the left and above the logo */
+    /* Hamburger ostáva vľavo nad logom */
     .navbar > .btn {
         position: relative;
-        z-index: 1060; /* above centered logo */
+        z-index: 1060;
     }
 
-    /* Slightly reduce logo size on smaller screens */
+    /* Zmenšené logo na mobiloch */
     .logo-circle {
         width: 80px;
         height: 80px;
@@ -255,21 +263,22 @@ table.table td, table.table th {
         height: 46px;
     }
 
-    /* Lift the homepage hero image up to remove gap under fixed navbar */
+    /* Posun hero obrázku pre odstránenie medzery */
     .home-hero-img { top: 0; }
 }
 
-/* Footer improvements: clearer headings, link colors and sponsor image sizing */
+/* Footer - vylepšené nadpisy a odkazy */
 .site-footer h5 {
-    color: #ffffff; /* ensure heading is bright on dark background */
-    margin-bottom: 0.5rem; /* consistent spacing */
+    color: #ffffff;
+    margin-bottom: 0.5rem;
     font-size: 1.05rem;
     font-weight: 600;
     letter-spacing: 0.02em;
-    padding-left: 0.75rem; /* space for accent bar */
+    padding-left: 0.75rem;
     position: relative;
 }
 
+/* Akcentná čiarka pri nadpise */
 .site-footer h5::before {
     content: "";
     position: absolute;
@@ -278,12 +287,13 @@ table.table td, table.table th {
     transform: translateY(-50%);
     width: 4px;
     height: 1.1rem;
-    background: #ffce0a; /* accent color matching navbar */
+    background: #ffce0a;
     border-radius: 2px;
 }
 
+/* Odkazy vo footeri */
 .site-footer a {
-    color: #ddd; /* subtle links */
+    color: #ddd;
     text-decoration: none;
 }
 
@@ -292,7 +302,7 @@ table.table td, table.table th {
     text-decoration: underline;
 }
 
-/* Sponsors container and images: target the d-flex direct children used in the view */
+/* Sponzori - kontajner a obrázky */
 .site-footer .d-flex > div {
     display: inline-flex;
     align-items: center;
@@ -308,20 +318,20 @@ table.table td, table.table th {
     display: block;
     border: 1px solid rgba(255,255,255,0.06);
     background: transparent;
-    padding: 0; /* avoid extra padding unless needed */
+    padding: 0;
 }
 
-/* If an image is non-png we expect the view to add a white background via inline style; ensure small images still look good */
+/* Menšie obrázky dostanú max výšku */
 .site-footer .d-flex img[alt] {
     max-height: 56px;
 }
 
-/* lighter text for muted areas */
+/* Muted text vo footeri */
 .site-footer .text-muted {
     color: rgba(255,255,255,0.6) !important;
 }
 
-/* Responsive adjustments */
+/* Responzívne úpravy footera */
 @media (max-width: 576px) {
     .site-footer h5 {
         font-size: 1rem;
@@ -332,46 +342,77 @@ table.table td, table.table th {
     }
 }
 
-/* Cards on home page: use event accent color */
+/* Karty na domovskej stránke - akcent farba */
 .home-card {
-    background-color: #ffcf0f !important; /* force requested color to override Bootstrap utilities */
-    color: #111 !important; /* dark text for contrast */
+    background-color: #ffcf0f !important;
+    color: #111 !important;
     border: 1px solid rgba(0,0,0,0.06);
     border-radius: 6px;
     transition: transform .12s ease, box-shadow .12s ease;
-    padding: 1rem !important; /* ensure inner spacing if overridden */
+    padding: 1rem !important;
 }
 .home-card:hover {
     transform: translateY(-4px);
     box-shadow: 0 12px 24px rgba(0,0,0,0.08);
 }
 
-/* Ensure anchor wrapping a card doesn't change background */
+/* Anchor s kartou nezmení pozadie */
 a.text-decoration-none > .home-card {
     display: block;
 }
 
-/* If a page (like home) renders a full-bleed inner container with p-0 inside .web-content,
-   it will be pushed down by the outer .container-fluid.mt-3 in the layout. For those pages
-   pull the inner container up by the same amount (Bootstrap's mt-3 == 1rem) so the hero
-   image sits flush under the fixed navbar. This targets only the inner container pattern
-   used on the home page and avoids changing the global layout. */
+/* Posun vnútorného full-bleed kontajnera pod navbar */
 .web-content > .container-fluid.p-0 { margin-top: -1rem !important; }
 
 @media (max-width: 1000px) {
     .web-content > .container-fluid.p-0 { margin-top: -0.75rem !important; }
 }
 
-/* Pull the entire home hero container up so hero image sits flush under the fixed navbar.
-   We compensate for body padding-top (70px) and the outer .mt-3 (1rem). Using calc so
-   it adapts if you later change the navbar height or spacing. */
+/* Posun celej hero sekcie tak, aby sedela pod fixným navbarom.
+   Kompenzuje padding-top tela a vonkajšie mt-3. */
 .home-top-lift {
-    margin-top: calc(-70px - 1rem); /* -70px (navbar) -1rem (outer mt-3) */
+    margin-top: calc(-70px - 1rem); /* -70px (navbar) -1rem (mt-3) */
 }
 
 @media (max-width: 1000px) {
-    /* smaller navbar + spacing on narrow screens */
+    /* Menší navbar a odsadenie na úzkych obrazovkách */
     .home-top-lift { margin-top: calc(-56px - 0.75rem); }
 }
 
-/* Removed map-related rules (moved to public/css/mapa.css) */
+/* Home button */
+.home-button {
+    position: fixed;
+    left: 1rem;
+    top: 1rem;
+    z-index: 1050;
+    padding: 0.35rem 0.6rem;
+    border-radius: 6px;
+    background: rgba(255,255,255,0.95);
+    color: #111;
+    border: 1px solid rgba(0,0,0,0.06);
+    box-shadow: 0 8px 20px rgba(0,0,0,0.06);
+    transition: transform 150ms ease, box-shadow 150ms ease;
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
+    font-weight: 500;
+}
+
+.home-button:hover {
+    transform: translateY(-3px);
+    box-shadow: 0 12px 24px rgba(0,0,0,0.08);
+}
+
+.home-button:focus {
+    outline: none;
+    box-shadow: 0 0 0 4px rgba(255, 206, 10, 0.22);
+}
+
+@media (max-width: 420px) {
+    .home-button {
+        left: 0.5rem;
+        top: 0.5rem;
+        padding: 0.25rem 0.45rem;
+        font-size: 0.92rem;
+    }
+}

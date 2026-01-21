@@ -5,7 +5,8 @@ namespace App\Support;
 use Framework\Support\LinkGenerator;
 
 /**
- * Presenter that encapsulates album/photo normalization and asset resolution for the gallery view.
+ * Presenter pre galériu.
+ * Normalizuje albumy/fotky a rieši asset URL pre view.
  */
 class GalleryPresenter
 {
@@ -19,7 +20,7 @@ class GalleryPresenter
     }
 
     /**
-     * Resolve an asset path using the application's LinkGenerator.
+     * Vyrieši URL assetu cez LinkGenerator.
      */
     public function asset(string $path): string
     {
@@ -27,11 +28,8 @@ class GalleryPresenter
     }
 
     /**
-     * Returns presentation-ready albums.
-     * Each album has: id, name, description, photos[] where each photo has filename, original_name, src
-     * Photos without filename are filtered out.
-     *
-     * @return array
+     * Vráti pripravené albumy pre zobrazenie.
+     * Každý album obsahuje: id, name, description, photos[].
      */
     public function getAlbums(): array
     {
@@ -69,9 +67,11 @@ class GalleryPresenter
         return $out;
     }
 
+    /**
+     * Vráti unikátne ID karuselu pre index.
+     */
     public function getCarouselIdForIndex(int $index): string
     {
         return 'galleryCarousel' . $index;
     }
 }
-

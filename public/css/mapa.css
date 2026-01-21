@@ -1,9 +1,12 @@
+/* Súbor: public/css/mapa.css */
+
 .map-bubble { position:absolute; z-index:999; display:none; pointer-events:auto; max-width:320px; }
 .map-bubble .bubble-card { background: #fff; border:1px solid rgba(0,0,0,0.12); border-radius:6px; box-shadow:0 6px 18px rgba(0,0,0,0.12); padding:8px; position:relative; overflow:visible; }
-/* Tail (arrow) - direction and placement set dynamically from JS */
+
+/* Ocások (šípka) - smer a umiestnenie nastavuje JS */
 .map-bubble .bubble-tail { position:absolute; width:0; height:0; pointer-events:none; }
 
-/* Marker design: rounded pill with beer icon and small diamond pointer */
+/* Marker: zaoblené telo s ikonou piva a malým pointerom */
 .overlay-marker .marker-shape {
     position:relative;
     width:45px;
@@ -15,24 +18,23 @@
     justify-content:center;
     border:2px solid #fff;
     box-shadow: 0 4px 10px rgba(0,0,0,0.35);
-    overflow:visible; /* allow pointer to be visible outside the rounded box */
-    z-index:1; /* keep marker above its pointer */
+    overflow:visible;
+    z-index:1;
 }
-/* Shift markers slightly to the right and higher than the stored coordinates. Tunable via CSS variables on #mapImageContainer. */
+/* Posun markerov; nastaviteľné cez CSS premenné na #mapImageContainer */
 .overlay-marker { transform: translate(var(--marker-offset-x, -10%), var(--marker-offset-y, -90%)); }
 .overlay-marker .marker-shape img { width:60%; height:60%; object-fit:contain; display:block; }
-/* small pointer under the marker (diamond rotated) */
+/* Malý pointer pod markerom (otočený štvorec) */
 .overlay-marker .marker-shape::after {
     content: "";
     position:absolute;
     left:50%;
-    transform:translateX(-50%) rotate(225deg); /* rotate diamond 180deg to flip pointer */
+    transform:translateX(-50%) rotate(225deg); /* otočiť štvorec, aby ukazoval nadol */
     width:12px;
     height:12px;
     bottom:-6px;
     background: #b71c1c;
-    border:2px solid #fff; /* full white outline so pointer is visible */
+    border:2px solid #fff;
     box-shadow: 0 3px 8px rgba(0,0,0,0.2);
-    z-index:0; /* place pointer visually slightly behind the marker body */
+    z-index:0;
 }
-

@@ -5,46 +5,59 @@ namespace App\Support;
 use Framework\Support\FooterDataProvider;
 use Framework\Support\LinkGenerator;
 
+/**
+ * Presenter pre pätičku stránky.
+ * Pripravuje dáta pre zobrazenie footeru.
+ */
 class FooterPresenter
 {
     private FooterDataProvider $provider;
     private LinkGenerator $link;
 
+    /**
+     * Nastaví link generator a data provider.
+     */
     public function __construct(LinkGenerator $link, ?FooterDataProvider $provider = null)
     {
         $this->link = $link;
         $this->provider = $provider ?? new FooterDataProvider();
     }
 
+    /**
+     * Email pre kontakt.
+     */
     public function getContactEmail(): string
     {
         return $this->provider->getContactEmail();
     }
 
+    /**
+     * Telefónne číslo pre kontakt.
+     */
     public function getContactPhone(): string
     {
         return $this->provider->getContactPhone();
     }
 
+    /**
+     * URL na Facebook.
+     */
     public function getFacebookUrl(): string
     {
         return $this->provider->getFacebookUrl();
     }
 
+    /**
+     * URL na Instagram.
+     */
     public function getInstagramUrl(): string
     {
         return $this->provider->getInstagramUrl();
     }
 
     /**
-     * Returns sponsors as an array of normalized items with presentation-ready fields:
-     * [
-     *   'name' => string,
-     *   'url' => ?string,
-     *   'hasLogo' => bool,
-     *   'logoSrc' => ?string,    // asset path
-     *   'imgStyle' => string     // inline style for image
-     * ]
+     * Vracia sponzorov ako pole normalizovaných položiek pripravených pre zobrazenie.
+     * Každ�� položka obsahuje: name, url, hasLogo, logoSrc, imgStyle.
      */
     public function getSponsors(): array
     {
@@ -85,9 +98,8 @@ class FooterPresenter
     }
 
     /**
-     * Returns prepared contact info for presentation.
-     * Keys: email, mailto, phone, tel, facebook, instagram
-     * All values are strings (empty when not available).
+     * Pripraví kontaktné informácie pre view.
+     * Kľúče: email, mailto, phone, tel, facebook, instagram
      */
     public function getPreparedContact(): array
     {
@@ -107,8 +119,7 @@ class FooterPresenter
     }
 
     /**
-     * Returns a presentation-ready copyright line (HTML).
-     * The app name is escaped here so the view can render the string directly.
+     * Vráti copyright riadok (HTML), meno aplikácie je escapované.
      */
     public function getCopyrightLine(): string
     {

@@ -6,6 +6,9 @@
 $view->setLayout('auth');
 ?>
 
+
+<a href="<?= $link->url('home.index') ?>" class="home-button btn btn-outline-secondary" aria-label="Domov">Domov</a>
+
 <div class="container">
     <div class="row">
         <div class="col-sm-9 col-md-7 col-lg-5 mx-auto">

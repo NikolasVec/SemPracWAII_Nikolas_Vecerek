@@ -5,8 +5,8 @@
 /** @var \Framework\Support\LinkGenerator $link */
 /** @var \App\Support\LayoutPresenter $layoutPresenter */
 
-// layoutPresenter is injected by the framework (ViewResponse) and is available here
-// as $layoutPresenter. Avoid instantiating presenters in the view.
+// layoutPresenter je injektovaný frameworkom (ViewResponse) a je dostupný tu
+// ako $layoutPresenter. Vyhni sa inštancovaniu presenterov vo view.
 ?>
 <!DOCTYPE html>
 <html lang="sk">
@@ -60,12 +60,12 @@
     <div class="d-flex align-items-center ms-1 nav-auth-group" style="min-width: 90px;">
         <?php if ($layoutPresenter->isLoggedIn()) { ?>
             <?php if ($layoutPresenter->isAdmin()) { ?>
-                <!-- Admins: show admin icon in navbar (Log out is available in the hamburger/offcanvas menu) -->
+                <!-- Pre adminov: ikona do navbaru (odhlásenie je v menu) -->
                 <a class="nav-link navbar-text me-2" href="<?= $layoutPresenter->adminUrl() ?>" title="Admin">
                     <i class="bi bi-person fs-3"></i>
                 </a>
             <?php } else { ?>
-                <!-- Non-admins: do not show Log out in navbar; icon links to profile page -->
+                <!-- Pre bežných užívateľov: ikona odkazuje na profil -->
                 <a class="nav-link navbar-text me-2" href="<?= $layoutPresenter->profileUrl() ?>" title="Môj profil">
                     <i class="bi bi-person fs-3"></i>
                 </a>
@@ -76,7 +76,7 @@
     </div>
 </nav>
 
-<!-- Offcanvas menu chứa položky hamburgeru -->
+<!-- Offcanvas menu (hamburger) -->
 <div class="offcanvas offcanvas-start" tabindex="-1" id="offcanvasMenu" aria-labelledby="offcanvasMenuLabel">
     <div class="offcanvas-header">
         <button type="button" class="btn-close text-reset" data-bs-dismiss="offcanvas" aria-label="Zatvoriť"></button>
@@ -89,11 +89,11 @@
             <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('home.resultsPage') ?>"><strong>VYHODNOTENIE</strong></a>
             <?php if ($layoutPresenter->isLoggedIn()) { ?>
                 <?php if ($layoutPresenter->isAdmin()) { ?>
-                    <!-- Admin: link to admin dashboard + logout -->
+                    <!-- Admin: link na administračné rozhranie a odhlásenie -->
                     <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->adminUrl() ?>"><strong>Administrácia</strong></a>
                     <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->url('auth.logout') ?>"><strong>Log out</strong></a>
                 <?php } else { ?>
-                    <!-- Non-admins: provide link to profile in offcanvas; logout available on profile page -->
+                    <!-- Pre bežných používateľov: odkaz na profil (odhlásenie na profile) -->
                     <a class="list-group-item list-group-item-action" href="<?= $layoutPresenter->profileUrl() ?>"><strong>Môj profil</strong></a>
                 <?php } ?>
             <?php } else { ?>
@@ -109,7 +109,7 @@
     </div>
 </div>
 
-<?php // include footer ?>
+<?php // vloženie pätičky ?>
 <?php try { include __DIR__ . '/footer.layout.php'; } catch (\Throwable $e) { /* ignore if missing */ } ?>
 </body>
 </html>

@@ -1,7 +1,8 @@
-// Combined admin scripts moved from App/Views/Admin/index.view.php
-// Contains: admin section navigation + admin UI (AJAX forms, modals, bezci filtering)
+// filepath: c:\Users\nikov\PhpstormProjects\SemPrac_Nikolas_Vecerek\public\js\admin.admin.js
+// Zlučené admin skripty presunuté z App/Views/Admin/index.view.php
+// Obsah: navigácia admin sekcií + admin UI (AJAX formuláre, modály, filtrovanie bežcov)
 (function(){
-    // --- Navigation helper for admin sections ---
+    // --- Pomocník pre navigáciu medzi admin sekciami ---
     const sections = ['bezci','roky','stanoviska','gallery','sponsors','pouzivatelia'];
     function showSection(section){
         sections.forEach(function(s){
@@ -23,13 +24,13 @@
         idx = (idx - 1 + sections.length) % sections.length; showSection(sections[idx]);
     };
 
-    // --- Admin UI script ---
-    // helper that injects CSRF header for POST requests
+    // --- Admin UI skript ---
+    // pomocná funkcia pridávajúca CSRF hlavičku pre POST požiadavky
     function csrfFetch(url, options) {
         options = options || {};
         var method = (options.method || 'GET').toUpperCase();
         options.headers = options.headers || {};
-        // ensure we send credentials (session cookie) by default
+        // zabezpečí posielanie cookie (credentials) štandardne
         if (!options.credentials) options.credentials = 'same-origin';
         if (method === 'POST') {
             if (!options.headers['X-CSRF-Token'] && !options.headers['x-csrf-token']) {
@@ -39,19 +40,19 @@
         return fetch(url, options);
     }
 
-    // Add missing handler for "Nastaviť ako výsledkový rok" button.
-    // Called from inline onclick in App/Views/Admin/index.view.php
+    // Handler pre tlačidlo "Nastaviť ako výsledkový rok".
+    // Volané inline cez onclick v App/Views/Admin/index.view.php
     window.setResultsYear = function(id) {
-        // confirm action with the admin
+        // potvrdiť akciu s administrátorom
         if (!confirm('Naozaj chcete nastaviť tento rok ako výsledkový?')) return;
         var fd = new FormData();
-        // ensure id is string (empty string clears the setting)
+        // zabezpečiť, že id je string (prázdny reťazec zruší nastavenie)
         fd.append('id', typeof id === 'undefined' || id === null ? '' : id);
         csrfFetch('/?c=Admin&a=setResultsYear', { method: 'POST', body: fd })
             .then(function(res) { return res.json(); })
             .then(function(data) {
                 if (data && data.success) {
-                    // reload to reflect change in UI
+                    // obnoviť stránku, aby sa zmena zobrazila
                     location.reload();
                 } else {
                     alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba.'));
@@ -61,7 +62,7 @@
             });
     };
 
-    // Handler for clearing the results year (called by "Zrušiť" button)
+    // Handler pre zrušenie výsledkového roku (tlačidlo "Zrušiť")
     window.clearResultsYear = function() {
         if (!confirm('Naozaj chcete zrušiť nastavenie výsledkového roku?')) return;
         var fd = new FormData(); fd.append('id', '');
@@ -123,6 +124,7 @@
 
     var currentSection = null;
 
+    // Otvorí modál pre pridanie záznamu a vygeneruje políčka formulára podľa definície
     function openAddModal(section) {
         currentSection = section;
         const fields = formFields[section] || [];
@@ -149,7 +151,7 @@
     }
     window.openAddModal = openAddModal;
 
-    // Add form submit
+    // Odosielanie formulára pre pridanie
     (function() {
         const addForm = document.getElementById('addForm');
         if (!addForm) return;
@@ -209,12 +211,14 @@
         });
     })();
 
+    // Otvorí modál pre mazanie (nastaví sekciu a vyprázdni ID)
     function openDeleteModal(section) {
         window.currentDeleteSection = section;
         const el = document.getElementById('deleteId'); if (el) el.value = '';
         const modalEl = document.getElementById('deleteModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
     }
 
+    // Priradí event handlery pre tlačidlá s triedou .btn-danger (otvorenie delete modalu)
     (function() {
         const buttons = document.querySelectorAll('.btn-danger[data-section]');
         if (!buttons) return;
@@ -223,7 +227,7 @@
         });
     })();
 
-    // Delete form
+    // Formulár pre mazanie
     (function() {
         const delForm = document.getElementById('deleteForm');
         if (!delForm) return;
@@ -256,7 +260,7 @@
         });
     })();
 
-    // Edit buttons
+    // Tlačidlá na úpravu záznamu
     (function() {
         const editButtons = document.querySelectorAll('.btn-warning[data-section]');
         if (!editButtons) return;
@@ -269,7 +273,7 @@
         });
     })();
 
-    // Edit ID form
+    // Formulár pre výber ID na úpravu
     (function() {
         const form = document.getElementById('editIdForm');
         if (!form) return;
@@ -315,7 +319,7 @@
         });
     })();
 
-    // Edit submit
+    // Odoslanie úprav
     (function() {
         const editForm = document.getElementById('editForm');
         if (!editForm) return;
@@ -332,7 +336,7 @@
         });
     })();
 
-    // --- Bezci AJAX filtering (fetch listBezci and re-render table) ---
+    // --- Filtrovanie bežcov cez AJAX (načíta listBezci a prerenderuje tabuľku) ---
     (function(){
         const yearSel = document.getElementById('bezciYearFilter');
         const genderSel = document.getElementById('bezciGenderFilter');
@@ -340,6 +344,7 @@
         const statusEl = document.getElementById('bezciFilterStatus');
         const container = document.getElementById('bezciTableContainer');
 
+        // Vytvorí alebo vráti existujúcu tabuľku pre zoznam bežcov
         function getOrCreateTable() {
             if (!container) return null;
             document.querySelectorAll('#bezciTable').forEach(function(el){
@@ -363,6 +368,7 @@
             return table;
         }
 
+        // Postaví hlavičku tabuľky podľa kľúčov prvej položky
         function buildHeaderFromItem(item) {
             const table = getOrCreateTable(); if (!table) return [];
             const thead = table.querySelector('thead');
@@ -376,6 +382,7 @@
             return keys;
         }
 
+        // Vykreslí riadky tabuľky na základe získaných položiek
         function renderRows(items, keys){
             const table = getOrCreateTable(); if (!table) return;
             const tbody = table.querySelector('tbody');
@@ -398,6 +405,7 @@
             });
         }
 
+        // Načíta zo servera filtrovaný zoznam bežcov a prerenderuje tabuľku
         function fetchAndRender() {
             const year = yearSel ? yearSel.value : '';
             const gender = genderSel ? genderSel.value : '';
@@ -433,19 +441,19 @@
         document.addEventListener('DOMContentLoaded', function(){ fetchAndRender(); });
     })();
 
-    // Gallery / Albums helpers (create, upload, list photos, delete)
+    // Galéria / albumy - pomocné funkcie (vytvoriť, nahrať, zoznam fotiek, vymazať)
     (function(){
-        // Open create album modal
+        // Otvoriť modál na vytvorenie albumu
         window.openCreateAlbumModal = function() {
             const form = document.getElementById('createAlbumForm');
             if (!form) return;
-            // reset form fields
+            // resetovať polia formulára
             form.reset();
             const modalEl = document.getElementById('createAlbumModal');
             if (modalEl) new bootstrap.Modal(modalEl).show();
         };
 
-        // Handle create album submit
+        // Spracovanie odoslania vytvorenia albumu
         (function(){
             const form = document.getElementById('createAlbumForm');
             if (!form) return;
@@ -456,7 +464,7 @@
                     .then(function(res){ return res.json(); })
                     .then(function(data){
                         if (data && data.success) {
-                            // reload to show newly created album in table
+                            // obnoviť stránku aby sa nový album zobrazil
                             location.reload();
                         } else {
                             alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba při vytváraní albumu.'));
@@ -465,11 +473,11 @@
             });
         })();
 
-        // Open upload modal and preselect album
+        // Otvoriť modál nahrávania a predvybrať album
         window.openUploadModal = function(albumId) {
             const sel = document.getElementById('uploadAlbumSelect');
             if (sel) {
-                // try to select option if present
+                // pokúsiť sa vybrať možnosť ak existuje
                 const opt = sel.querySelector('option[value="'+albumId+'"]');
                 if (opt) sel.value = albumId;
             }
@@ -477,25 +485,25 @@
             const modalEl = document.getElementById('uploadModal'); if (modalEl) new bootstrap.Modal(modalEl).show();
         };
 
-        // Handle upload form submit
+        // Spracovanie odoslania nahrávania
         (function(){
             const form = document.getElementById('uploadForm');
             if (!form) return;
             form.addEventListener('submit', function(e){
                 e.preventDefault();
                 const fd = new FormData(form);
-                // ensure album_id present
+                // zabezpečiť, že album_id je prítomné
                 const aid = fd.get('album_id');
                 if (!aid) { alert('Vyberte album.'); return; }
-                // Use fetch with credentials/same-origin; csrfFetch will add header for POST
+                // Použiť fetch so credentials; csrfFetch pridá CSRF hlavičku pri POST
                 csrfFetch('/?c=Admin&a=uploadPhoto', { method: 'POST', body: fd })
                     .then(function(res){ return res.json(); })
                     .then(function(data){
                         if (data && data.success) {
-                            // close modal and optionally refresh photos modal if open
+                            // zatvoriť modál a prípadne obnoviť zoznam fotiek
                             const modal = bootstrap.Modal.getInstance(document.getElementById('uploadModal'));
                             if (modal) modal.hide();
-                            // show photos modal for the same album to reflect new uploads
+                            // zobraziť modál fotiek pre ten istý album aby sa prejavili nahrávky
                             if (aid) window.openPhotosModal(aid);
                         } else {
                             alert('Chyba: ' + (data && data.message ? data.message : 'Neznáma chyba pri nahrávaní.'));
@@ -504,7 +512,8 @@
             });
         })();
 
-        // Open photos modal for album and list photos
+
+        // Otvoriť modál fotiek pre album a zobraziť fotky
         window.openPhotosModal = function(albumId) {
             if (!albumId) return;
             const body = document.getElementById('photosModalBody');
@@ -534,7 +543,7 @@
                     }
                     html += '</div>';
                     if (body) body.innerHTML = html;
-                    // attach delete handlers
+                    // pripojiť handlery pre mazanie
                     const modalEl = document.getElementById('photosModal');
                     if (modalEl) new bootstrap.Modal(modalEl).show();
                     body.querySelectorAll('button[data-photo-id]').forEach(function(btn){
@@ -547,7 +556,7 @@
                                 .then(function(res){ return res.json(); })
                                 .then(function(resp){
                                     if (resp && resp.success) {
-                                        // refresh photos list
+                                        // obnoviť zoznam fotiek
                                         window.openPhotosModal(aid);
                                     } else {
                                         alert('Chyba: ' + (resp && resp.message ? resp.message : 'Neznáma chyba pri mazaní.'));
@@ -558,7 +567,7 @@
                 }).catch(function(){ if (body) body.innerHTML = '<div class="text-danger">Chyba pri načítaní fotiek.</div>'; });
         };
 
-        // Confirm and delete album
+        // Potvrdiť a vymazať album
         window.deleteAlbumConfirm = function(albumId) {
             if (!albumId) return;
             if (!confirm('Naozaj chcete vymazať album a všetky jeho fotky?')) return;
@@ -572,7 +581,8 @@
 
     })();
 
-    // Initialize navigation when DOM is ready
+
+    // Inicializovať navigáciu po načítaní DOM
     document.addEventListener('DOMContentLoaded', function(){
         const hash = (location.hash || '').replace('#','');
         const start = sections.includes(hash) ? hash : 'bezci';

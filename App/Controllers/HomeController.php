@@ -9,23 +9,20 @@ use Framework\Http\Responses\Response;
 use App\Support\MapPresenter;
 
 /**
- * Class HomeController
- * Handles actions related to the home page and other public actions.
+ * Trieda HomeController
+ * Spracúva akcie pre hlavnú stránku a verejné stránky.
  *
- * This controller includes actions that are accessible to all users, including a default landing page and a contact
- * page. It provides a mechanism for authorizing actions based on user permissions.
+ * Obsahuje endpointy prístupné všetkým používateľom.
  *
  * @package App\Controllers
  */
 class HomeController extends BaseController
 {
     /**
-     * Authorizes controller actions based on the specified action name.
+     * Autorizácia akcie (tu povolené všetky akcie).
      *
-     * In this implementation, all actions are authorized unconditionally.
-     *
-     * @param string $action The action name to authorize.
-     * @return bool Returns true, allowing all actions.
+     * @param string $action Názov akcie
+     * @return bool true = povolené
      */
     public function authorize(Request $request, string $action): bool
     {
@@ -33,11 +30,7 @@ class HomeController extends BaseController
     }
 
     /**
-     * Displays the default home page.
-     *
-     * This action serves the main HTML view of the home page.
-     *
-     * @return Response The response object containing the rendered HTML for the home page.
+     * Zobrazí domovskú stránku.
      */
     public function index(Request $request): Response
     {
@@ -45,12 +38,7 @@ class HomeController extends BaseController
     }
 
     /**
-     * Displays the informacie page.
-     *
-     * This action serves the HTML view for the informacie page, which is accessible to all users without any
-     * authorization.
-     *
-     * @return Response The response object containing the rendered HTML for the informacie page.
+     * Zobrazí stránku "informacie".
      */
     public function informacie(Request $request): Response
     {
@@ -58,10 +46,7 @@ class HomeController extends BaseController
     }
 
     /**
-     * Displays the contact page.
-     *
-     * This action serves the HTML view for the contact page, which is accessible to all users without any
-     * authorization.
+     * Zobrazí mapu a stanoviská.
      */
     public function mapa(Request $request): Response
     {
@@ -72,12 +57,12 @@ class HomeController extends BaseController
             $stmt = $conn->query('SELECT * FROM Stanovisko');
             $stanoviska = $stmt->fetchAll(\PDO::FETCH_ASSOC);
         } catch (\Throwable $e) {
-            // capture error for debugging in the view
+            // chybu uložíme pre zobrazenie vo view
             $stanoviska = [];
             $error = $e->getMessage();
         }
 
-        // Present data: move application logic out of the view into a presenter
+        // Použijeme presenter na prípravu dát pre view
         $presenter = new MapPresenter();
         $presented = $presenter->present($stanoviska);
 
@@ -104,7 +89,7 @@ class HomeController extends BaseController
                 }
             }
         } catch (\Throwable $e) {
-            // ignore DB errors and show empty gallery
+            // pri chybe DB ukážeme prázdnu galériu
             $albums = [];
         }
 
@@ -114,9 +99,9 @@ class HomeController extends BaseController
     {
         $success = null;
         $error = null;
-        $userNotRegistered = false; // flag to indicate email isn't a registered user
+        $userNotRegistered = false; // príznak: email nie je zaregistrovaný používateľ
 
-        // Prepare form defaults. If user is logged in, prefill with their identity data.
+        // Prednastavenie formulára. Ak je prihlásený, predvyplníme údaje.
         $form = [
             'meno' => '',
             'priezvisko' => '',
@@ -126,7 +111,7 @@ class HomeController extends BaseController
 
         if ($this->user->isLoggedIn()) {
             $identity = $this->user->getIdentity();
-            // DbUser exposes getFirstName/getLastName/getEmail
+            // DbUser poskytuje getFirstName/getLastName/getEmail
             if (method_exists($identity, 'getFirstName')) {
                 $form['meno'] = $identity->getFirstName();
             }
@@ -136,7 +121,7 @@ class HomeController extends BaseController
             if (method_exists($identity, 'getEmail')) {
                 $form['email'] = $identity->getEmail();
             }
-            // Prefill pohlavie if identity provides it (getGender)
+            // Predvyplnenie pohlavia ak identita poskytne getGender
             if (method_exists($identity, 'getGender')) {
                 $g = mb_strtoupper(trim($identity->getGender()), 'UTF-8');
                 if ($g === 'Z') {
@@ -147,36 +132,36 @@ class HomeController extends BaseController
         }
 
         if ($request->isPost()) {
-            // Trim and read inputs
+            // Načítaj a otrimuj vstupy
             $meno = trim((string)$request->post('meno'));
             $priezvisko = trim((string)$request->post('priezvisko'));
             $email = trim((string)$request->post('email'));
             $pohlavie = trim((string)$request->post('pohlavie'));
             $rok = date('Y');
 
-            // Update form with submitted values so they persist on validation error
+            // Aktualizuj formulár s odoslanými hodnotami (pre opätovné zobrazenie)
             $form['meno'] = $meno;
             $form['priezvisko'] = $priezvisko;
             $form['email'] = $email;
             $form['pohlavie'] = $pohlavie ?: $form['pohlavie'];
 
-            // Server-side validation: required fields
+            // Validácia na serveri: povinné polia
             if ($meno === '' || $priezvisko === '' || $email === '' || $pohlavie === '') {
                 $error = 'Všetky polia sú povinné.';
             } elseif (!filter_var($email, FILTER_VALIDATE_EMAIL)) {
                 $error = 'Zadaný email nemá správny formát.';
             } else {
-                // Normalize pohlavie and allow only expected values (M / Ž)
+                // Normalizuj pohlavie a povoľ len očakávané hodnoty (M / Ž)
                 $pohlUp = mb_strtoupper($pohlavie, 'UTF-8');
                 if (!in_array($pohlUp, ['M', 'Ž'], true)) {
                     $error = 'Neplatná hodnota pre pohlavie.';
                 } else {
-                    // Use canonical single-char values stored in DB (M or ž)
+                    // Použi kanonické jednoznakové hodnoty uložené v DB (M alebo Ž)
                     $pohlavieStored = ($pohlUp === 'M') ? 'M' : 'Ž';
 
                     try {
                         $conn = \Framework\DB\Connection::getInstance();
-                        // Zisti ID_roka pre aktuálny rok
+                        // Nájde ID_roka pre aktuálny rok
                         $stmt = $conn->prepare('SELECT ID_roka FROM rokKonania WHERE rok = ? LIMIT 1');
                         $stmt->execute([$rok]);
                         $row = $stmt->fetch();
@@ -189,26 +174,26 @@ class HomeController extends BaseController
                             $id_roka = $conn->lastInsertId();
                         }
 
-                        // --- New: prevent duplicate registration for same email in the same year ---
+                        // --- Nové: zabráni duplicitnej registrácii rovnakého emailu v tom istom roku ---
                         $check = $conn->prepare('SELECT COUNT(*) AS cnt FROM Bezec WHERE email = ? AND ID_roka = ?');
                         $check->execute([$email, $id_roka]);
                         $exists = (int)$check->fetchColumn();
                         if ($exists > 0) {
                             $error = 'Tento email je už registrovaný na tohtoročný beh.';
                         } else {
-                            // --- New: ensure email belongs to a registered Pouzivatelia user ---
+                            // --- Nové: overenie, že email patrí registrovanému používateľovi ---
                             $u = $conn->prepare('SELECT COUNT(*) FROM Pouzivatelia WHERE email = ?');
                             $u->execute([$email]);
                             $userCount = (int)$u->fetchColumn();
                             if ($userCount === 0) {
-                                // Friendly, actionable message for users
+                                // Užívateľ nie je registrovaný
                                 $error = 'Zadaný email nie je zaregistrovaný ako používateľ. Prosím prihláste sa alebo si najprv vytvorte účet.';
                                 $userNotRegistered = true;
                             } else {
-                                // Uloz bezca - prepared statement
+                                // Uložíme bežca
                                 $stmt = $conn->prepare('INSERT INTO Bezec (meno, priezvisko, email, pohlavie, ID_roka) VALUES (?, ?, ?, ?, ?)');
                                 $stmt->execute([$meno, $priezvisko, $email, $pohlavieStored, $id_roka]);
-                                // Aktualizuj pocet_ucastnikov v rokKonania
+                                // Aktualizujeme pocet_ucastnikov v rokKonania
                                 $stmt = $conn->prepare('SELECT COUNT(*) AS pocet FROM Bezec WHERE ID_roka = ?');
                                 $stmt->execute([$id_roka]);
                                 $pocet = $stmt->fetch()['pocet'];
@@ -218,13 +203,13 @@ class HomeController extends BaseController
                             }
                         }
                     } catch (\PDOException $e) {
-                        // Duplicate-entry for unique constraint (MySQL error code 1062 / SQLSTATE 23000)
+                        // Duplicate-entry pre unique constraint (MySQL 1062 / SQLSTATE 23000)
                         $sqlState = $e->getCode();
                         $mysqlErrNo = null;
                         if (is_array($e->errorInfo) && isset($e->errorInfo[1])) {
                             $mysqlErrNo = $e->errorInfo[1];
                         }
-                        // If FK constraint fails (no referenced user) MySQL error is 1452
+                        // Ak zlyhá FK (referenčný) MySQL error 1452
                         if ($sqlState === '23000' && $mysqlErrNo === 1452) {
                             $error = 'Zadaný email nie je zaregistrovaný ako používateľ. Prosím prihláste sa alebo si najprv vytvorte účet.';
                             $userNotRegistered = true;
@@ -272,7 +257,7 @@ class HomeController extends BaseController
         $finishedF = [];
 
         if ($resultsYear !== null) {
-            // fetch human-readable year value from rokKonania
+            // Načítať čitateľný rok z tabuľky rokKonania
             try {
                 $sr = $conn->prepare('SELECT rok FROM rokKonania WHERE ID_roka = ? LIMIT 1');
                 $sr->execute([$resultsYear]);
@@ -281,7 +266,7 @@ class HomeController extends BaseController
                     $resultsYearLabel = $row['rok'];
                 }
             } catch (\Throwable $e) {
-                $resultsYearLabel = $resultsYear; // fallback to ID
+                $resultsYearLabel = $resultsYear; // fallback na ID
             }
 
             $stmtM = $conn->prepare('SELECT meno, priezvisko, cas_dobehnutia FROM Bezec WHERE pohlavie = ? AND ID_roka = ? ORDER BY (cas_dobehnutia IS NULL), cas_dobehnutia ASC');
@@ -293,15 +278,14 @@ class HomeController extends BaseController
             $femaleResults = $stmtF->fetchAll();
 
 
-            // prepare finished-only lists (non-empty cas_dobehnutia) for presentation
+            // Priprav zoznamy iba dokončených (neprázdny cas_dobehnutia)
             $finishedM = array_values(array_filter($maleResults, function($r) { return !empty($r['cas_dobehnutia']); }));
             $finishedF = array_values(array_filter($femaleResults, function($r) { return !empty($r['cas_dobehnutia']); }));
 
 
-            // --- credit matching user accounts: removed ---
-            // The previous implementation updated Pouzivatelia.zabehnute_kilometre and Pouzivatelia.vypite_piva here.
-            // That logic has been intentionally removed so it can be redesigned and implemented elsewhere.
-            // No database writes are performed in this controller action.
+            // --- Kreditovanie používateľských účtov: odstránené ---
+            // Predchádzajúca implementácia aktualizovala Pouzivatelia.zabehnute_kilometre a Pouzivatelia.vypite_piva.
+            // Táto logika bola zámerne odstránená a nebude sa tu vykonávať zápis do DB.
 
         }
 
@@ -316,8 +300,8 @@ class HomeController extends BaseController
     }
 
     /**
-     * Displays the user profile page for the currently logged-in user.
-     * Requires the user to be logged in; otherwise redirects to the login page.
+     * Zobrazí profil prihláseného používateľa.
+     * Ak nie je prihlásený, presmeruje na prihlasovanie.
      */
     public function profile(Request $request): Response
     {
@@ -327,26 +311,26 @@ class HomeController extends BaseController
 
         $identity = $this->user->getIdentity();
 
-        // Determine whether the user is registered for the current year's run
+        // Zistí, či je užívateľ registrovaný na aktuálny ročník
         $isRegisteredThisYear = false;
         try {
             $conn = \Framework\DB\Connection::getInstance();
             $currentYear = date('Y');
 
-            // Find ID_roka for the current year (if exists)
+            // Nájde ID_roka pre aktuálny rok (ak existuje)
             $stmt = $conn->prepare('SELECT ID_roka FROM rokKonania WHERE rok = ? LIMIT 1');
             $stmt->execute([$currentYear]);
             $row = $stmt->fetch();
             if ($row && isset($row['ID_roka'])) {
                 $idRoka = $row['ID_roka'];
-                // Check Bezec for a registration by this user's email
+                // Skontroluje registráciu v Bezec podľa emailu
                 $stmt2 = $conn->prepare('SELECT COUNT(*) FROM Bezec WHERE email = ? AND ID_roka = ?');
                 $stmt2->execute([$identity->getEmail(), $idRoka]);
                 $cnt = (int)$stmt2->fetchColumn();
                 $isRegisteredThisYear = ($cnt > 0);
             }
         } catch (\Throwable $e) {
-            // If any DB error occurs, treat as not registered (fail-safe)
+            // Pri chybe DB predpokladaj, že nie je registrovaný (bezpečné správanie)
             $isRegisteredThisYear = false;
         }
 

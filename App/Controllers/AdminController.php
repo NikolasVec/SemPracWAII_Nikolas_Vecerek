@@ -8,23 +8,16 @@ use Framework\Http\Request;
 use Framework\Http\Responses\Response;
 
 /**
- * Class AdminController
+ * Trieda AdminController
  *
- * This controller manages admin-related actions within the application.It extends the base controller functionality
- * provided by BaseController.
+ * Spravuje adminské akcie v aplikácii. Rozširuje BaseController.
  *
  * @package App\Controllers
  */
 class AdminController extends BaseController
 {
     /**
-     * Authorizes actions in this controller.
-     *
-     * This method checks if the user is logged in, allowing or denying access to specific actions based
-     * on the authentication state.
-     *
-     * @param string $action The name of the action to authorize.
-     * @return bool Returns true if the user is logged in; false otherwise.
+     * Autorizácia akcií: povolené len pre prihláseného admina
      */
     public function authorize(Request $request, string $action): bool
     {
@@ -33,20 +26,20 @@ class AdminController extends BaseController
     }
 
     /**
-     * Displays the index page of the admin panel.
-     *
-     * This action requires authorization. It returns an HTML response for the admin dashboard or main page.
-     *
-     * @return Response Returns a response object containing the rendered HTML.
+     * Zobrazenie hlavnej stránky admin panelu (dashboard)
      */
     public function index(Request $request): Response
     {
+        // Načítaj spojenie a základné tabuľky
         $conn = Connection::getInstance();
+        // Načítaj bežcov
         $bezci = $conn->query('SELECT * FROM Bezec')->fetchAll(\PDO::FETCH_ASSOC);
+        // Načítaj roky konania
         $roky = $conn->query('SELECT * FROM rokKonania')->fetchAll(\PDO::FETCH_ASSOC);
+        // Načítaj stanoviská
         $stanoviska = $conn->query('SELECT * FROM Stanovisko')->fetchAll(\PDO::FETCH_ASSOC);
 
-        // Try to load currently selected year for results from settings table (if exists)
+        // Skús načítať vybraný rok výsledkov zo settings (ak existuje)
         $currentResultsYear = null;
         try {
             // ensure settings table may not exist; select safely
@@ -65,7 +58,7 @@ class AdminController extends BaseController
             $currentResultsYear = null;
         }
 
-        // Fetch albums for gallery management if table exists
+        // Načítaj albumy pre správu galérie (ak existuje tabuľka)
         $albums = [];
         try {
             $stmt = $conn->query("SHOW TABLES LIKE 'albums'");
@@ -77,7 +70,7 @@ class AdminController extends BaseController
             $albums = [];
         }
 
-        // --- Fetch sponsors table for admin management (if exists) ---
+        // Načítaj sponzorov (ak existuje)
         $sponsors = [];
         try {
             $stmt = $conn->query("SHOW TABLES LIKE 'sponsors'");
@@ -89,7 +82,7 @@ class AdminController extends BaseController
             $sponsors = [];
         }
 
-        // --- Fetch users (Pouzivatelia) for admin listing (if table exists) ---
+        // Načítaj používateľov pre admin zobrazenie (ak existuje)
         $pouzivatelia = [];
         try {
             $stmt = $conn->query("SHOW TABLES LIKE 'Pouzivatelia'");
@@ -102,7 +95,7 @@ class AdminController extends BaseController
             $pouzivatelia = [];
         }
 
-        // compute upload/post size limits (convert shorthand like '2M' to bytes)
+        // Vypočítaj limity uploadu (prevod skratkových hodnôt ako '2M' na bajty)
         $parseIniBytes = function($val) {
             $val = trim($val);
             if ($val === '') return 0;
@@ -133,9 +126,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Handles AJAX add requests for Bezec, rokKonania, Stanovisko.
-     * @param Request $request
-     * @return Response
+     * Pridanie záznamu (AJAX): bezci, roky, stanoviska, sponsors, pouzivatelia
      */
     public function add(Request $request): Response
     {
@@ -399,7 +390,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Delete a record by section and id
+     * Odstránenie záznamu podľa sekcie a ID
      */
     public function delete(Request $request): Response
     {
@@ -517,7 +508,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Get a single record for edit
+     * Vrátí jeden záznam pre edit (AJAX)
      */
     public function get(Request $request): Response
     {
@@ -562,7 +553,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Update a record by section
+     * Aktualizácia záznamu podľa sekcie
      */
     public function update(Request $request): Response
     {
@@ -795,7 +786,9 @@ class AdminController extends BaseController
         }
     }
 
-    // New action to set which year is used on the public results page
+    /**
+     * Nastaví, ktorý rok sa zobrazuje na verejných výsledkoch
+     */
     public function setResultsYear(Request $request): Response
     {
         if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
@@ -834,10 +827,10 @@ class AdminController extends BaseController
 
     // Manual admin crediting endpoints were removed. Crediting is now performed automatically when public results are generated.
 
-    // --- New gallery-related actions ---
+    // --- Galéria: nové akcie ---
 
     /**
-     * Create a new album (AJAX)
+     * Vytvorenie nového albumu (AJAX)
      */
     public function createAlbum(Request $request): Response
     {
@@ -887,7 +880,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Upload photos to an album (AJAX multipart/form-data)
+     * Nahrať fotky do albumu (AJAX multipart/form-data)
      */
     public function uploadPhoto(Request $request): Response
     {
@@ -1062,7 +1055,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * List photos for an album (AJAX)
+     * Zoznam fotiek v albume (AJAX)
      */
     public function listPhotos(Request $request): Response
     {
@@ -1086,8 +1079,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * AJAX: list (filterable) bezci records
-     * Accepts optional GET params: ID_roka (int) and pohlavie (M/Z)
+     * Zoznam bežcov (filtr.) - akceptuje ID_roka a pohlavie
      */
     public function listBezci(Request $request): Response
     {
@@ -1121,9 +1113,9 @@ class AdminController extends BaseController
         }
     }
 
-    // --- Validation helpers (server-side) ------------------------------------------------
+    // --- Pomocné validačné metódy (server-side) ------------------------------------------------
     /**
-     * Check whether a provided id is a positive integer
+     * Overí, či ID je kladné celé číslo
      */
     private function isValidId($id): bool
     {
@@ -1134,7 +1126,7 @@ class AdminController extends BaseController
 
 
     /**
-     * Ensure an event year exists in the DB
+     * Skontroluje, či rok existuje v DB
      */
     private function yearExists($conn, $id): bool
     {
@@ -1149,7 +1141,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Ensure an album exists in the DB
+     * Skontroluje, či album existuje v DB
      */
     private function albumExists($conn, $id): bool
     {
@@ -1164,7 +1156,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Validate a date string in Y-m-d format
+     * Platnosť dátumu vo formáte Y-m-d
      */
     private function isValidDateYmd(string $date): bool
     {
@@ -1173,7 +1165,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Convert PHP ini shorthand to bytes
+     * Prevod skratkových PHP ini hodnôt (napr. 2M) na bajty
      */
     private function parseIniBytes(string $val): int
     {
@@ -1191,7 +1183,7 @@ class AdminController extends BaseController
     }
 
     /**
-     * Validate uploaded image file array (from $_FILES). Returns null on success or error message on failure.
+     * Validácia nahraného obrázka z poľa $_FILES
      */
     private function validateUploadedImage(array $file, int $maxBytes): ?string
     {

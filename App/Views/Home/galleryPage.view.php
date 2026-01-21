@@ -2,7 +2,7 @@
 
 /** @var \Framework\Support\LinkGenerator $link */
 
-// Use a presenter to keep this view presentation-only
+
 /** @var \App\Support\GalleryPresenter $galleryPresenter */
 $galleryPresenter = new \App\Support\GalleryPresenter($link, $albums ?? []);
 $albums = $galleryPresenter->getAlbums();
