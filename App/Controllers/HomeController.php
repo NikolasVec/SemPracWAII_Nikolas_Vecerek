@@ -6,6 +6,7 @@ use Framework\Core\BaseController;
 use Framework\DB\Connection;
 use Framework\Http\Request;
 use Framework\Http\Responses\Response;
+use App\Support\MapPresenter;
 
 /**
  * Class HomeController
@@ -76,7 +77,11 @@ class HomeController extends BaseController
             $error = $e->getMessage();
         }
 
-        return $this->html(['stanoviska' => $stanoviska, 'mapa_error' => $error]);
+        // Present data: move application logic out of the view into a presenter
+        $presenter = new MapPresenter();
+        $presented = $presenter->present($stanoviska);
+
+        return $this->html(['stanoviska' => $presented, 'mapa_error' => $error]);
     }
     public function galleryPage(Request $request): Response
     {
